@@ -1,15 +1,19 @@
 package sc.lazymath.activities;
 
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -39,6 +43,7 @@ public class CameraActivity extends ActionBarActivity {
         Camera.Parameters params = camera.getParameters();
 
         camera.setDisplayOrientation(90);
+        params.setRotation(90);
 
         // set focus mode to auto
         if (params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
@@ -114,6 +119,37 @@ public class CameraActivity extends ActionBarActivity {
     private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
+            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+            // crop image to window
+            PointF pictureSize = new PointF(bmp.getWidth(), bmp.getHeight());
+
+            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+            PointF screenSize = new PointF(preview.getWidth(), preview.getHeight());
+
+            double scaleX = pictureSize.x / screenSize.x;
+            double scaleY = pictureSize.y / screenSize.y;
+
+            Button seButton = (Button) findViewById(R.id.button_se);
+            Button nwButton = (Button) findViewById(R.id.button_nw);
+
+            int minX = nwButton.getLeft();
+            int minY = nwButton.getTop();
+            int maxX = seButton.getRight();
+            int maxY = seButton.getBottom();
+
+            double left = minX * scaleX >= 0 ? minX * scaleX : 0;
+            double top = minY * scaleY >= 0 ? minY * scaleY : 0;
+            double right = maxX * scaleX <= pictureSize.x ? maxX * scaleX : pictureSize.x;
+            double bottom = maxY * scaleY <= pictureSize.y ? maxY * scaleY : pictureSize.y;
+
+            Bitmap croppedBmp = Bitmap.createBitmap(bmp, (int) left, (int) top,
+                    (int) (right - left), (int) (bottom - top));
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            croppedBmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            data = stream.toByteArray();
+
             File pictureFile = getOutputMediaFile(1);
             if (pictureFile == null) {
                 return;
@@ -153,3 +189,4 @@ public class CameraActivity extends ActionBarActivity {
         return mediaFile;
     }
 }
+

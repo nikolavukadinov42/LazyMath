@@ -5,12 +5,14 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
+import android.widget.FrameLayout;
 
 import sc.lazymath.R;
 
@@ -19,7 +21,7 @@ import sc.lazymath.R;
  */
 public class CameraWindowUtil {
 
-    private static Point size;
+//    private static Point size;
     private static final float marginX = 250;
     private static final float marginY = 300;
 
@@ -30,9 +32,8 @@ public class CameraWindowUtil {
         Button nwButton = (Button) activity.findViewById(R.id.button_nw);
 
         // get screen size
-        Display display = activity.getWindowManager().getDefaultDisplay();
-        size = new Point();
-        display.getSize(size);
+//        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
+//        screenSize = new PointF(preview.getWidth(), preview.getHeight());
 
         View.OnTouchListener myOnTouchListener = new View.OnTouchListener() {
             public boolean onTouch(View view, MotionEvent e) {
@@ -181,18 +182,19 @@ public class CameraWindowUtil {
 
     private static class Window extends View {
 
-        private Button seButton;
-        private Button nwButton;
+        private Activity activity;
 
-        public Window(Context context, Button seButton, Button nwButton) {
+        public Window(Context context, Activity activity) {
             super(context);
 
-            this.seButton = seButton;
-            this.nwButton = nwButton;
+            this.activity = activity;
         }
 
         @Override
         public void onDraw(Canvas canvas) {
+            Button seButton = (Button) activity.findViewById(R.id.button_se);
+            Button nwButton = (Button) activity.findViewById(R.id.button_nw);
+
             Paint paint = new Paint();
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawRect(nwButton.getLeft(), nwButton.getTop(),
