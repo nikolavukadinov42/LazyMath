@@ -4,15 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.PointF;
-import android.graphics.Rect;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
-import android.widget.FrameLayout;
 
 import sc.lazymath.R;
 
@@ -21,7 +16,7 @@ import sc.lazymath.R;
  */
 public class CameraWindowUtil {
 
-//    private static Point size;
+    //    private static Point size;
     private static final float marginX = 250;
     private static final float marginY = 300;
 
@@ -32,8 +27,8 @@ public class CameraWindowUtil {
         Button nwButton = (Button) activity.findViewById(R.id.button_nw);
 
         // get screen size
-//        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
-//        screenSize = new PointF(preview.getWidth(), preview.getHeight());
+        //        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
+        //        screenSize = new PointF(preview.getWidth(), preview.getHeight());
 
         View.OnTouchListener myOnTouchListener = new View.OnTouchListener() {
             public boolean onTouch(View view, MotionEvent e) {
@@ -175,8 +170,8 @@ public class CameraWindowUtil {
         }
 
         // move button
-        AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                height, (int) (flagX ? button.getX() : x), (int) (flagY ? button.getY() : y));
+        AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width, height,
+                (int) (flagX ? button.getX() : x), (int) (flagY ? button.getY() : y));
         button.setLayoutParams(params);
     }
 
@@ -197,8 +192,8 @@ public class CameraWindowUtil {
 
             Paint paint = new Paint();
             paint.setStyle(Paint.Style.STROKE);
-            canvas.drawRect(nwButton.getLeft(), nwButton.getTop(),
-                    seButton.getRight(), seButton.getBottom(), paint);
+            canvas.drawRect(nwButton.getLeft(), nwButton.getTop(), seButton.getRight(),
+                    seButton.getBottom(), paint);
         }
     }
 }
