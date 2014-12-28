@@ -12,6 +12,8 @@ import sc.lazymath.R;
 
 public class HomeActivity extends ActionBarActivity {
 
+    public static final String TAG = "sc.lazyMath";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,6 +31,10 @@ public class HomeActivity extends ActionBarActivity {
         );
     }
 
+    public void findSolutionOnClick(View view) {
+        Intent intent = new Intent(this, SolutionActivity.class);
+        startActivity(intent);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
