@@ -53,9 +53,9 @@ public class Ocr {
 
         int[][] image = ImageUtil.bitmapToMatrix(rotated);
 
-        int[][] blackAndWhite = ImageUtil.otsu(image);
+        int[][] blackAndWhite = ImageUtil.matrixToBinaryTiles(image, 10, 10);
 
-        Bitmap processed = ImageUtil.matrixToBitmap(image);
+        Bitmap processed = ImageUtil.matrixToBitmap(blackAndWhite);
 
         return processed;
     }

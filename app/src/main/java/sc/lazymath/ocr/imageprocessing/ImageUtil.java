@@ -7,7 +7,6 @@ package sc.lazymath.ocr.imageprocessing;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -36,9 +35,9 @@ public class ImageUtil {
             byte[] row = Arrays.copyOfRange(data, y * rowBytes, y * rowBytes + rowBytes);
 
             for (int x = 0; x < width; x++) {
-                int b = Math.abs((int)row[x * pixelSize + 0] + 128);// Blue
-                int g = Math.abs((int)row[x * pixelSize + 1] + 128);// Green
-                int r = Math.abs((int)row[x * pixelSize + 2] + 128);// Red
+                int b = Math.abs((int) (row[x * pixelSize + 0]) & 0xff);// Blue
+                int g = Math.abs((int) (row[x * pixelSize + 1]) & 0xff);// Green
+                int r = Math.abs((int) (row[x * pixelSize + 2]) & 0xff);// Red
 
                 int average = (int) (((double) b + (double) g + (double) r) / 3.0);
 
@@ -61,7 +60,7 @@ public class ImageUtil {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int offset = y * width * pixelSize + x * pixelSize;
-                byte val = (byte) (image[y][x] - 128);
+                byte val = (byte) image[y][x];
 
                 data[offset + 0] = val;
                 data[offset + 1] = val;
@@ -108,6 +107,72 @@ public class ImageUtil {
 
         return mean / count;
     }
+
+    public static int[][] matrixToBinaryTiles(int[][] image, int R, int C) {
+        int w = image[0].length;
+        int h = image.length;
+        double dW = (double) w / C;
+        double dH = (double) h / R;
+        double[][] means = new double[R][C];
+        int[][] retVal = new int[h][w];
+
+        int[] histogram = new int[255 / 2];
+        int D = 4;
+        for (int r = 0; r < R; r++) {
+            for (int c = 0; c < C; c++) {
+                means[r][c] = 0;
+                int minD = 0;
+                int maxD = 0;
+                int maxDif = 0;
+                for (int y = 0; y < dH; y++) {
+                    int A = 0;
+                    int B = 0;
+                    for (int x = 0; x < D; x++) {
+                        A += image[(int) (r * dH) + y][(int) (c * dW) + x];
+                    }
+                    for (int x = D; x < 2 * D; x++) {
+                        B += image[(int) (r * dH) + y][(int) (c * dW) + x];
+                    }
+                    for (int x = D; x < dW - D; x++) {
+                        int diff = Math.abs(A - B);
+                        if (diff >= maxDif) {
+                            maxDif = diff;
+                            minD = Math.min(A, B);
+                            maxD = Math.max(A, B);
+                        }
+                        A -= image[(int) (r * dH) + y][(int) (c * dW) + x - D];
+                        A += image[(int) (r * dH) + y][(int) (c * dW) + x];
+                        B -= image[(int) (r * dH) + y][(int) (c * dW) + x];
+                        B += image[(int) (r * dH) + y][(int) (c * dW) + x + D - 1];
+                    }
+                }
+                int TT = (maxD + minD) / (2 * D);
+                int DD = (maxD - minD) / D;
+                histogram[DD / 2]++;
+                //                meanDD += DD;
+                for (int y = 0; y < dH; y++) {
+                    for (int x = 0; x < dW; x++) {
+                        if (DD > 20) {
+                            if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT){//means[r, c]){
+                                retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+                            } else {
+                                retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
+                            }
+                        } else {
+                            if (TT < 80) {
+                                retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+                            } else {
+                                retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return retVal;
+    }
+
 
     public static int[][] matrixToBinary(int[][] image, int mean) {
         int w = image[0].length;
