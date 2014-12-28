@@ -5,33 +5,73 @@
 package sc.lazymath.ocr.imageprocessing;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.os.AsyncTask;
+import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import sc.lazymath.entities.WolframAlphaPod;
+
 public class ImageUtil {
+    public static byte[][] bitmapToByteMatrix(Bitmap bitmap) {
+        int bytesize = bitmap.getByteCount();
+        ByteBuffer buffer = ByteBuffer.allocate(bytesize);
+        buffer.rewind();
+        bitmap.copyPixelsToBuffer(buffer);
+        buffer.rewind();
+        byte[] data = new byte[bytesize];
+        buffer.get(data);
+        buffer.rewind();
+
+        int pixelSize = 4;
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int rowBytes = bitmap.getRowBytes();
+
+        byte[][] ret = new byte[height][width];
+
+        for (int y = 0; y < height; y++) {
+            byte[] row = new byte[rowBytes];
+            buffer.get(row, y * rowBytes, rowBytes);
+
+            for (int x = 0; x < width; x++) {
+                byte b = (byte) Math.abs(row[x * pixelSize + 0]);// Blue
+                byte g = (byte) Math.abs(row[x * pixelSize + 1]);// Green
+                byte r = (byte) Math.abs(row[x * pixelSize + 2]);// Red
+
+                byte average = (byte) (((double) b + (double) g + (double) r) / 3.0);
+
+                ret[y][x] = average;
+            }
+        }
+
+        return ret;
+    }
+
     public static Bitmap matrixToBitmap(byte[][] image) {
-//        int w = image.GetLength(1);
-//        // .GetLowerBound(0);
-//        int h = image.GetLength(0);
-//        int PixelSize = 4;
-//        Bitmap into = new Bitmap(w, h);
-//        Rectangle lrEntire = new Rectangle(new Point(), new Size(w, h));
-//        BitmapData lbdDest = into.LockBits(lrEntire, ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-//        for (int y = 0;y < h;y++)
-//        {
-//            byte* rowDest = (byte*)lbdDest.Scan0 + (y * lbdDest.Stride);
-//            for (int x = 0;x < w;x++)
-//            {
-//                rowDest[x * PixelSize + 0] = image[y][x];
-//                rowDest[x * PixelSize + 1] = image[y][x];
-//                rowDest[x * PixelSize + 2] = image[y][x];
-//            }
-//        }
-//        into.UnlockBits(lbdDest);
-        return null;
+        int width = image[0].length;
+        int height = image.length;
+        int pixelSize = 4;
+
+        byte[] data = new byte[width * height * 4];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int offset = y * width * pixelSize + x * pixelSize;
+                data[offset + 0] = image[y][x];
+                data[offset + 1] = image[y][x];
+                data[offset + 2] = image[y][x];
+            }
+        }
+
+        return BitmapFactory.decodeByteArray(data, 0, data.length);
     }
 
     public static double mean(byte[][] image) {
@@ -77,10 +117,11 @@ public class ImageUtil {
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                if (image[y][x] < mean)
+                if (image[y][x] < mean) {
                     retVal[y][x] = 0;
-                else
+                } else {
                     retVal[y][x] = (byte) 255;
+                }
             }
         }
 
@@ -95,8 +136,9 @@ public class ImageUtil {
         int[] histogram = new int[L];
         List<PointF> points = new ArrayList<>();
 
-        for (int i = 0; i < L; i++)
+        for (int i = 0; i < L; i++) {
             histogram[i] = 0;
+        }
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -125,8 +167,9 @@ public class ImageUtil {
             for (int x = 0; x < w; x++) {
                 Boolean b = true;
                 for (int t = 0; t < n; t++) {
-                    if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w)
+                    if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
                         continue;
+                    }
 
                     if (image[y + ii[t]][x + jj[t]] != 0) {
                         b = false;
@@ -154,8 +197,9 @@ public class ImageUtil {
             for (int x = 0; x < w; x++) {
                 Boolean b = false;
                 for (int t = 0; t < n; t++) {
-                    if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w)
+                    if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
                         continue;
+                    }
 
                     if (image[y + ii[t]][x + jj[t]] == 0) {
                         b = true;
@@ -163,10 +207,11 @@ public class ImageUtil {
                     }
 
                 }
-                if (b == true)
+                if (b == true) {
                     retVal[y][x] = 0;
-                else
+                } else {
                     retVal[y][x] = (byte) 255;
+                }
             }
         }
 
@@ -188,8 +233,9 @@ public class ImageUtil {
                 if (image[y][x] == 0) {
                     regNum++;
                     byte rr = (byte) (regNum * 50);
-                    if (rr == 0)
+                    if (rr == 0) {
                         rr = 1;
+                    }
 
                     image[y][x] = rr;
                     List<Point> front = new ArrayList<>();
@@ -244,11 +290,12 @@ public class ImageUtil {
         int ww = image[0].length;
         int hh = image.length;
         int total = ww * hh;
-        List<PointF>h = ImageUtil.histogram(image);
+        List<PointF> h = ImageUtil.histogram(image);
 
         int sum = 0;
-        for (int i = 1; i < 256; ++i)
+        for (int i = 1; i < 256; ++i) {
             sum += i * (int) h.get(i).y;
+        }
 
         int sumB = 0;
         int wB = 0;
@@ -263,13 +310,15 @@ public class ImageUtil {
         for (int i = 0; i < 256; ++i) {
             wB += (int) h.get(i).y;
 
-            if (wB == 0)
+            if (wB == 0) {
                 continue;
+            }
 
             wF = total - wB;
 
-            if (wF == 0)
+            if (wF == 0) {
                 break;
+            }
 
             sumB += i * (int) h.get(i).y;
             mB = sumB / wB;
@@ -288,5 +337,6 @@ public class ImageUtil {
         return ImageUtil.matrixToBinary(image, (byte) ((threshold1 + threshold2) / 2.0));
     }
 }
+
 
 

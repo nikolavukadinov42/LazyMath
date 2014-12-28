@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">LazyMath</string>
+
+    <!-- Activities -->
+    <string name="title_activity_camera">CameraActivity</string>
+    <string name="title_activity_solution">SolutionActivity</string>
+
+    <!-- Buttons -->
+    <string name="find_solution_button">Find solution</string>
+    <string name="take_picture_button">Take picture</string>
+
+    <!-- Menus -->
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Input -->
+    <string name="math_problem_input_text">Math problem</string>
+</resources>

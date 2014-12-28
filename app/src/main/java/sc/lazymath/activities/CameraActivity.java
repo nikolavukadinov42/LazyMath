@@ -8,7 +8,10 @@ import android.graphics.PointF;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -22,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import sc.lazymath.R;
+import sc.lazymath.ocr.Ocr;
 import sc.lazymath.util.CameraWindowUtil;
 import sc.lazymath.views.CameraView;
 
@@ -35,9 +39,14 @@ public class CameraActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         if (getApplicationContext().getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_CAMERA)) {
-            camera = getCameraInstance();
+                PackageManager.FEATURE_CAMERA_ANY)) {
+            camera = openFrontFacingCameraGingerbread();
+            Log.d(HomeActivity.TAG, "has camera");
+        } else {
+            Log.e(HomeActivity.TAG, "Failed to load camera from system.");
         }
 
         Camera.Parameters params = camera.getParameters();
@@ -55,8 +64,11 @@ public class CameraActivity extends ActionBarActivity {
             params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
         }
         // set flash mode on
-        if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_ON)) {
-            params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+        if (params.getSupportedFlashModes() != null) {
+            if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_ON)) {
+                params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+            }
+
         }
 
         // set Camera parameters
@@ -77,6 +89,23 @@ public class CameraActivity extends ActionBarActivity {
         );
 
         CameraWindowUtil.initCorners(this);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        switch (item.getItemId()) {
+            // Respond to the action bar's Up/Home button
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+            case R.id.action_settings:
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -109,6 +138,24 @@ public class CameraActivity extends ActionBarActivity {
         return c;
     }
 
+    private static Camera openFrontFacingCameraGingerbread() {
+        int cameraCount = 0;
+        Camera cam = null;
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        cameraCount = Camera.getNumberOfCameras();
+        for (int camIdx = 0; camIdx<cameraCount; camIdx++) {
+            Camera.getCameraInfo(camIdx, cameraInfo);
+            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                try {
+                    cam = Camera.open(camIdx);
+                } catch (RuntimeException e) {
+                    Log.e(HomeActivity.TAG, "Camera failed to open: " + e.getLocalizedMessage());
+                }
+            }
+        }
+        return cam;
+    }
+
     Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
@@ -119,42 +166,15 @@ public class CameraActivity extends ActionBarActivity {
     private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-
-            // crop image to window
-            PointF pictureSize = new PointF(bmp.getWidth(), bmp.getHeight());
-
-            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-            PointF screenSize = new PointF(preview.getWidth(), preview.getHeight());
-
-            double scaleX = pictureSize.x / screenSize.x;
-            double scaleY = pictureSize.y / screenSize.y;
-
-            Button seButton = (Button) findViewById(R.id.button_se);
-            Button nwButton = (Button) findViewById(R.id.button_nw);
-
-            int minX = nwButton.getLeft();
-            int minY = nwButton.getTop();
-            int maxX = seButton.getRight();
-            int maxY = seButton.getBottom();
-
-            double left = minX * scaleX >= 0 ? minX * scaleX : 0;
-            double top = minY * scaleY >= 0 ? minY * scaleY : 0;
-            double right = maxX * scaleX <= pictureSize.x ? maxX * scaleX : pictureSize.x;
-            double bottom = maxY * scaleY <= pictureSize.y ? maxY * scaleY : pictureSize.y;
-
-            Bitmap croppedBmp = Bitmap.createBitmap(bmp, (int) left, (int) top,
-                    (int) (right - left), (int) (bottom - top));
-
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            croppedBmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            data = stream.toByteArray();
+            // TODO: Fix this. Throws index out of bounds exception.
+//            data = Ocr.convertImage(data,CameraActivity.this);
 
             File pictureFile = getOutputMediaFile(1);
             if (pictureFile == null) {
+                Log.e(HomeActivity.TAG, "NULL PICTURE FILE");
                 return;
             }
-
+            Log.d(HomeActivity.TAG, "SAVING PICTURE " + pictureFile.toString());
             try {
                 FileOutputStream fos = new FileOutputStream(pictureFile);
                 fos.write(data);
