@@ -53,17 +53,21 @@ public class RasterRegion {
             xM += pp.x;
             yM += pp.y;
 
-            if (pp.x < minX)
+            if (pp.x < minX) {
                 minX = pp.x;
+            }
 
-            if (pp.x > maxX)
+            if (pp.x > maxX) {
                 maxX = pp.x;
+            }
 
-            if (pp.y < minY)
+            if (pp.y < minY) {
                 minY = pp.y;
+            }
 
-            if (pp.y > maxY)
+            if (pp.y > maxY) {
                 maxY = pp.y;
+            }
 
         }
         xM = xM / n;
@@ -90,8 +94,9 @@ public class RasterRegion {
             double temp2 = Math.min(alpha1, alpha2);
             alpha1 = temp1;
             alpha2 = temp2;
-            if (alpha1 != 0)
+            if (alpha1 != 0) {
                 eccentricity = alpha2 / alpha1;
+            }
 
             majorAxisLength = alpha1;
             minorAxisLength = alpha2;
@@ -101,20 +106,21 @@ public class RasterRegion {
     }
 
     public byte[][] determineImage() {
-        if (!determinedMoments)
+        if (!determinedMoments) {
             determineMoments();
+        }
 
         int height = maxY - minY + 1;
         int width = maxX - minX + 1;
         byte[][] retVal = new byte[height][width];
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                retVal[i][j]= (byte) 255;
+                retVal[i][j] = (byte) 255;
             }
         }
         for (Object point : points) {
             Point p = (Point) point;
-            retVal[p.y - minY][p.x - minX]=0;
+            retVal[p.y - minY][p.x - minX] = 0;
         }
         return retVal;
     }
@@ -124,8 +130,9 @@ public class RasterRegion {
         List<Point> nPoints = new ArrayList<>();
         double ugao;
 
-        if (!determinedMoments)
+        if (!determinedMoments) {
             determineMoments();
+        }
 
         ugao = Math.PI / 2 - Math.abs(theta);
 

@@ -74,40 +74,6 @@ public class ImageUtil {
         return ret;
     }
 
-    public static double mean(int[][] image) {
-        int w = image[0].length;
-        int h = image.length;
-        double mean = 0;
-
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                mean += image[y][x];
-            }
-        }
-
-        return mean / (w * h);
-    }
-
-    public static double mean2(int[][] image) {
-        int w = image[0].length;
-        int h = image.length;
-        int mean = 0;
-        int count = 0;
-
-        List<Integer> foo = new ArrayList<>();
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                if (!foo.contains(image[y][x])) {
-                    foo.add(image[y][x]);
-                    mean += image[y][x];
-                    count++;
-                }
-            }
-        }
-
-        return mean / count;
-    }
-
     public static int[][] matrixToBinaryTiles(int[][] image, int R, int C) {
         int w = image[0].length;
         int h = image.length;
@@ -117,43 +83,56 @@ public class ImageUtil {
         int[][] retVal = new int[h][w];
 
         int[] histogram = new int[255 / 2];
+
         int D = 4;
+
         for (int r = 0; r < R; r++) {
             for (int c = 0; c < C; c++) {
                 means[r][c] = 0;
+
                 int minD = 0;
                 int maxD = 0;
+
                 int maxDif = 0;
+
                 for (int y = 0; y < dH; y++) {
                     int A = 0;
                     int B = 0;
+
                     for (int x = 0; x < D; x++) {
                         A += image[(int) (r * dH) + y][(int) (c * dW) + x];
                     }
+
                     for (int x = D; x < 2 * D; x++) {
                         B += image[(int) (r * dH) + y][(int) (c * dW) + x];
                     }
+
                     for (int x = D; x < dW - D; x++) {
                         int diff = Math.abs(A - B);
+
                         if (diff >= maxDif) {
                             maxDif = diff;
                             minD = Math.min(A, B);
                             maxD = Math.max(A, B);
                         }
+
                         A -= image[(int) (r * dH) + y][(int) (c * dW) + x - D];
                         A += image[(int) (r * dH) + y][(int) (c * dW) + x];
                         B -= image[(int) (r * dH) + y][(int) (c * dW) + x];
                         B += image[(int) (r * dH) + y][(int) (c * dW) + x + D - 1];
                     }
                 }
+
                 int TT = (maxD + minD) / (2 * D);
                 int DD = (maxD - minD) / D;
+
                 histogram[DD / 2]++;
+
                 //                meanDD += DD;
                 for (int y = 0; y < dH; y++) {
                     for (int x = 0; x < dW; x++) {
                         if (DD > 20) {
-                            if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT){//means[r, c]){
+                            if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT) {//means[r, c]){
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
                             } else {
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
@@ -229,20 +208,20 @@ public class ImageUtil {
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                Boolean b = true;
+                int count = n;
+
                 for (int t = 0; t < n; t++) {
                     if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
                         continue;
                     }
 
                     if (image[y + ii[t]][x + jj[t]] != 0) {
-                        b = false;
-                        break;
+                        count--;
                     }
 
                 }
 
-                retVal[y][x] = b ? 0 : 255;
+                retVal[y][x] = count >= 3 ? 0 : 255;
             }
         }
 
@@ -259,23 +238,21 @@ public class ImageUtil {
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                Boolean b = false;
+                int count = n;
+
                 for (int t = 0; t < n; t++) {
                     if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
                         continue;
                     }
 
                     if (image[y + ii[t]][x + jj[t]] == 0) {
-                        b = true;
-                        break;
+                        count--;
                     }
 
                 }
-                if (b == true) {
-                    retVal[y][x] = 0;
-                } else {
-                    retVal[y][x] = 255;
-                }
+
+
+                retVal[y][x] = count >= 3 ? 255 : 0;
             }
         }
 
@@ -284,11 +261,13 @@ public class ImageUtil {
 
     public static List<RasterRegion> regionLabeling(int[][] image) {
         List<RasterRegion> regions = new ArrayList<>();
+
         int w = image[0].length;
         int h = image.length;
-        int[][] retVal = new int[h][w];
+
         int[] ii = {0, 1, 0, -1, 0};
         int[] jj = {1, 0, -1, 0, 0};
+
         int n = ii.length;
         int regNum = 0;
 
@@ -323,13 +302,10 @@ public class ImageUtil {
                                     region.points.add(point);
                                     front.add(point);
                                 }
-
                             }
-
                         }
                     }
                 }
-
             }
         }
 
@@ -401,6 +377,41 @@ public class ImageUtil {
         }
 
         return ImageUtil.matrixToBinary(image, (int) ((threshold1 + threshold2) / 2.0));
+    }
+
+
+    public static double mean(int[][] image) {
+        int w = image[0].length;
+        int h = image.length;
+        double mean = 0;
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                mean += image[y][x];
+            }
+        }
+
+        return mean / (w * h);
+    }
+
+    public static double mean2(int[][] image) {
+        int w = image[0].length;
+        int h = image.length;
+        int mean = 0;
+        int count = 0;
+
+        List<Integer> foo = new ArrayList<>();
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                if (!foo.contains(image[y][x])) {
+                    foo.add(image[y][x]);
+                    mean += image[y][x];
+                    count++;
+                }
+            }
+        }
+
+        return mean / count;
     }
 }
 

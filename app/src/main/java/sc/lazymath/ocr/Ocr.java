@@ -8,8 +8,11 @@ import android.graphics.PointF;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
+import java.util.List;
+
 import sc.lazymath.R;
 import sc.lazymath.ocr.imageprocessing.ImageUtil;
+import sc.lazymath.ocr.imageprocessing.RasterRegion;
 
 /**
  * Created by nikola42 on 12/28/2014.
@@ -55,7 +58,13 @@ public class Ocr {
 
         int[][] blackAndWhite = ImageUtil.matrixToBinaryTiles(image, 10, 10);
 
-        Bitmap processed = ImageUtil.matrixToBitmap(blackAndWhite);
+        int[][] erosioned = ImageUtil.erosion(blackAndWhite);
+
+        int[][] dilated = ImageUtil.dilation(erosioned);
+
+        Bitmap processed = ImageUtil.matrixToBitmap(dilated);
+
+        List<RasterRegion> regions = ImageUtil.regionLabeling(dilated);
 
         return processed;
     }
