@@ -15,9 +15,8 @@ import java.util.List;
 import sc.lazymath.R;
 import sc.lazymath.ocr.imageprocessing.ImageUtil;
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
-import sc.lazymath.ocr.math.OcrMath;
+import sc.lazymath.ocr.math.MathOcr;
 import sc.lazymath.ocr.math.formulatree.AbstractNode;
-import sc.lazymath.ocr.math.formulatree.FractionNode;
 
 public class HomeActivity extends ActionBarActivity {
 
@@ -41,13 +40,14 @@ public class HomeActivity extends ActionBarActivity {
 /*
         Bitmap example = BitmapFactory.decodeResource(this.getResources(), R.drawable.example);
 
-        List<RasterRegion> regions = ImageUtil.regionLabeling(ImageUtil.matrixToBinary(ImageUtil.bitmapToMatrix(example), 200));
+        List<RasterRegion> regions = ImageUtil.regionLabeling(ImageUtil.matrixToBinary(ImageUtil
+                .bitmapToMatrix(example), 200));
 
         for(RasterRegion region : regions){
             region.determineMoments();
         }
 
-        List<AbstractNode> foo = OcrMath.getFractionNodes(regions);*/
+        List<AbstractNode> foo = MathOcr.getNthRootNodes(regions);*/
     }
 
     public void findSolutionOnClick(View view) {

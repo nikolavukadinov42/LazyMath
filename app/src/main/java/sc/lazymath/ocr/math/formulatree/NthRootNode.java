@@ -10,8 +10,12 @@ import sc.lazymath.ocr.imageprocessing.RasterRegion;
  */
 public class NthRootNode extends AbstractNode {
 
-    private RasterRegion exponent;
+    private AbstractNode exponent;
     private List<AbstractNode> elements;
+
+    public NthRootNode() {
+        this.elements = new ArrayList<>();
+    }
 
     @Override
     public String getCharacters() {
@@ -25,20 +29,30 @@ public class NthRootNode extends AbstractNode {
 
         ret.add(region);
 
-        ret.add(exponent);
+        if (exponent != null) {
+            ret.addAll(exponent.getRasterRegions());
+        }
 
-        for (AbstractNode node : elements){
+        for (AbstractNode node : elements) {
             ret.addAll(node.getRasterRegions());
         }
 
         return ret;
     }
 
-    public RasterRegion getExponent() {
+    public void addElement(AbstractNode node) {
+        elements.add(node);
+    }
+
+    public void addElements(List<AbstractNode> nodes) {
+        elements.addAll(nodes);
+    }
+
+    public AbstractNode getExponent() {
         return exponent;
     }
 
-    public void setExponent(RasterRegion exponent) {
+    public void setExponent(AbstractNode exponent) {
         this.exponent = exponent;
     }
 

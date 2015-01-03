@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
-import sc.lazymath.ocr.math.OcrMath;
+import sc.lazymath.ocr.math.MathOcr;
 
 /**
  * Created by nikola42 on 12/29/2014.
@@ -14,12 +14,9 @@ public class FractionNode extends AbstractNode {
     private List<AbstractNode> numerators;
     private List<AbstractNode> denominators;
 
-    public FractionNode(RasterRegion fractionLine, List<RasterRegion> regions) {
-        this.region = fractionLine;
+    public FractionNode() {
         this.numerators = new ArrayList<>();
         this.denominators = new ArrayList<>();
-
-        OcrMath.createFractionNode(this, fractionLine, regions);
     }
 
     @Override
