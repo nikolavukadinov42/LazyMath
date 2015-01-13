@@ -1,0 +1,113 @@
+<project name="Vezbe04" default="main" basedir=".">
+
+	<property file="build.properties" />
+
+	<property name="src" value="${basedir}/src" />
+	<property name="docs" value="${basedir}/docs" />
+	<property name="build" value="${basedir}/build" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="compile-libs" value="${basedir}/compile-libs" />
+	<property name="runtime-libs" value="${basedir}/runtime-libs" />
+
+	<path id="compile.classpath">
+	    <fileset dir="${compile-libs}" includes="*.jar"/>
+	</path>
+	
+	<path id="runtime.classpath">
+		    <fileset dir="${runtime-libs}" includes="*.jar"/>
+	</path>
+	
+	<target name="check-tomee" unless="tomee.dir">
+		<fail>
+			Property "tomee.dir" is not set. Please use the file
+			"ant.properties" in this directory ${basedir} to
+			set this property. It must point to the directory which
+			contains the following directory: "bin", "conf", "webapps"
+			etc.
+		</fail>
+	</target>
+
+	
+	<target name="check-environment">
+		<antcall target="check-tomee" />
+	</target>
+
+	<target name="init" depends="check-environment">
+		<echo message="java.home = ${java.home}" />
+		<echo message="tomee.dir = ${tomee.dir}" />
+	</target>
+
+	<!-- Delete all built files -->
+	<target name="clean" depends="init">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+		<delete file="${tomee.dir}/webapps/${jarname}" />
+	</target>
+
+	<!-- Compile everything -->
+	<target name="compile" depends="clean">
+	    <mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+	    <javac srcdir="${src}" destdir="${build}" classpathref="compile.classpath" debug="true"/>
+		<copy todir="${build}">
+			<fileset dir="${src}" includes="jndi.properties" />
+		</copy>
+	</target>
+	
+	<!-- Generate javadoc -->
+	<target name="javadoc" depends="compile">
+		
+	</target>
+	
+	<!-- Jar -->
+	<target name="jar" depends="javadoc">
+		<jar jarfile="${dist}/${jarname}">
+			<fileset dir="${build}">
+				<include name="rs/ac/uns/ftn/informatika/mbs2/vezbe04/primer01/server/**" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<!-- Deploy  -->
+	<target name="deploy" depends="jar">
+		<copy todir="${tomee.dir}/webapps">
+			<fileset dir="${dist}" includes="${jarname}" />
+		</copy>
+	</target>
+
+	<target name="main" depends="deploy" />
+
+	<!-- Run Client 1 -->
+	<target name="runInitItems">
+		<java classname="rs.ac.uns.ftn.informatika.mbs2.vezbe04.primer01.client.InitItems" fork="true">
+			<classpath>
+				<pathelement path="${build}" />
+				<pathelement path="${runtime-libs}/openejb-client-4.5.0.jar" />
+				<pathelement path="${compile-libs}/javaee-api-6.0-4-tomcat.jar" />
+			</classpath>
+		</java>
+	</target>
+	
+	<!-- Run Client 2 -->
+	<target name="runGetOrders">
+		<java classname="rs.ac.uns.ftn.informatika.mbs2.vezbe04.primer01.client.GetOrders" fork="true">
+			<classpath>
+				<pathelement path="${build}" />
+				<pathelement path="${runtime-libs}/openejb-client-4.5.0.jar" />
+				<pathelement path="${compile-libs}/javaee-api-6.0-4-tomcat.jar" />
+			</classpath>
+		</java>
+	</target>
+	
+	<!-- Run Client 3 -->
+	<target name="runTestClient">
+		<java classname="rs.ac.uns.ftn.informatika.mbs2.vezbe04.primer01.client.TestClient" fork="true">
+			<classpath>
+				<pathelement path="${build}" />
+				<pathelement path="${runtime-libs}/openejb-client-4.5.0.jar" />
+				<pathelement path="${compile-libs}/javaee-api-6.0-4-tomcat.jar" />
+			</classpath>
+		</java>
+	</target>
+
+</project>
