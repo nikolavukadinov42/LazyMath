@@ -8,11 +8,11 @@ import sc.lazymath.ocr.imageprocessing.RasterRegion;
 /**
  * Created by nikola42 on 12/29/2014.
  */
-public class DefaultNode extends AbstractNode {
+public class SimpleNode extends AbstractNode {
 
     private List<AbstractNode> exponent;
 
-    public DefaultNode(RasterRegion region) {
+    public SimpleNode(RasterRegion region) {
         this.region = region;
 
         this.exponent = new ArrayList<>();
