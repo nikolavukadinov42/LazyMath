@@ -9,7 +9,7 @@ import java.util.List;
 
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
 import sc.lazymath.ocr.math.formulatree.AbstractNode;
-import sc.lazymath.ocr.math.formulatree.DefaultNode;
+import sc.lazymath.ocr.math.formulatree.SimpleNode;
 import sc.lazymath.ocr.math.formulatree.FractionNode;
 import sc.lazymath.ocr.math.formulatree.NthRootNode;
 
@@ -80,7 +80,7 @@ public class MathOcr {
             ret = new NthRootNode();
             ret.setRasterRegion(r1);
 
-            ret.setExponent(new DefaultNode(exponent));
+            ret.setExponent(new SimpleNode(exponent));
 
             ret.addElements(getNthRootNodes(elements));
             ret.addElements(getDefaultNodes(elements));
@@ -93,7 +93,7 @@ public class MathOcr {
         List<AbstractNode> ret = new ArrayList<>();
 
         for (RasterRegion region : regions) {
-            DefaultNode defaultNode = new DefaultNode(region);
+            SimpleNode defaultNode = new SimpleNode(region);
 
             // TODO exponent
 
