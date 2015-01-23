@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
-import ftn.sc.lazymath.ocr.math.MathOcrUtil;
 
 /**
  * Created by nikola42 on 12/29/2014.
@@ -18,9 +17,9 @@ public class Formula {
 
 	public Formula(List<RasterRegion> backupRegions) {
 		this.backupRegions = backupRegions;
-		nodes = new ArrayList<AbstractNode>();
+		this.nodes = new ArrayList<AbstractNode>();
 	}
-	
+
 	public void addNodes(List<AbstractNode> nodes) {
 		this.nodes.addAll(nodes);
 	}
@@ -30,7 +29,7 @@ public class Formula {
 	}
 
 	public List<AbstractNode> getNodes() {
-		return nodes;
+		return this.nodes;
 	}
 
 	public void setNodes(List<AbstractNode> nodes) {
@@ -39,18 +38,19 @@ public class Formula {
 
 	@Override
 	public String toString() {
-		// sort by length
-		Collections.sort(nodes, new Comparator<AbstractNode>() {
+		StringBuilder sb = new StringBuilder();
+
+		Collections.sort(this.nodes, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
 				return (int) (firstNode.minX - secondNode.minX);
 			}
 		});
 
-		StringBuilder sb = new StringBuilder();
-		for (AbstractNode abstractNode : nodes) {
+		for (AbstractNode abstractNode : this.nodes) {
 			sb.append(abstractNode + " \t");
 		}
+
 		return sb.toString();
 	}
 }

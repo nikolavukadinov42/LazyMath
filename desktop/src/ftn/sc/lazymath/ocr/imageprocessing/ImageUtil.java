@@ -38,12 +38,12 @@ public class ImageUtil {
 				int pixel = image.getRGB(x, y);
 
 				// Get pixels
-//				int alpha = (pixel >> 24) & 0xFF;
+				// int alpha = (pixel >> 24) & 0xFF;
 				int red = (pixel >> 16) & 0xFF;
 				int green = (pixel >> 8) & 0xFF;
 				int blue = pixel & 0xFF;
 
-				int average = (int) (((double) blue + (double) green + (double) red) / 3.0);
+				int average = (int) (((double) blue + (double) green + red) / 3.0);
 				ret[y][x] = average;
 			}
 		}
@@ -136,7 +136,7 @@ public class ImageUtil {
 					for (int x = 0; x < dW; x++) {
 						if (DD > 20) {
 							if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT) {// means[r,
-																						// c]){
+								// c]){
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
 							} else {
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
@@ -423,7 +423,8 @@ public class ImageUtil {
 
 		int scaledWidth;
 		int scaledHeight;
-		if (currentWidth == 0 || currentHeight == 0 || (currentWidth == newWidth && currentHeight == newHeight)) {
+		if (currentWidth == 0 || currentHeight == 0
+				|| (currentWidth == newWidth && currentHeight == newHeight)) {
 			return bImage;
 		} else if (currentWidth == currentHeight) {
 			scaledWidth = newWidth;
@@ -443,18 +444,20 @@ public class ImageUtil {
 
 		BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = resized.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+				RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setComposite(AlphaComposite.SrcOver);
 		g.setColor(new Color(0, 0, 0, 0));
 		g.fillRect(0, 0, newWidth, newHeight);
-		g.drawImage(imageToResize, x, y, x + scaledWidth, y + scaledHeight, 0, 0, currentWidth, currentHeight, new Color(0, 0, 0, 0), null);
+		g.drawImage(imageToResize, x, y, x + scaledWidth, y + scaledHeight, 0, 0, currentWidth,
+				currentHeight, new Color(0, 0, 0, 0), null);
 		g.dispose();
 
 		return ImageUtil.bitmapToMatrix(resized);
 	}
-	
+
 	public void saveImage(BufferedImage image) {
 		try {
 			File outputfile = new File(String.valueOf(System.currentTimeMillis()) + ".png");

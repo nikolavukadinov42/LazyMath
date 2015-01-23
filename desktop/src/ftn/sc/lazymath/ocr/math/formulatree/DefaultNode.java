@@ -19,12 +19,6 @@ public class DefaultNode extends AbstractNode {
 	}
 
 	@Override
-	public String getCharacters() {
-		// karakter + eksponent
-		return null;
-	}
-
-	@Override
 	public List<RasterRegion> getRasterRegions() {
 		List<RasterRegion> ret = new ArrayList<>();
 
@@ -43,6 +37,7 @@ public class DefaultNode extends AbstractNode {
 				return abstractNode;
 			}
 		}
+
 		return null;
 	}
 
@@ -57,13 +52,17 @@ public class DefaultNode extends AbstractNode {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+
 		sb.append(this.region.tag);
+
 		if (this.exponent.size() > 0) {
 			sb.append("^");
 		}
+
 		for (AbstractNode abstractNode : this.exponent) {
 			sb.append(abstractNode);
 		}
+
 		return sb.toString();
 	}
 
