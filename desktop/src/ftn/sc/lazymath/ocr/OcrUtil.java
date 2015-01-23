@@ -189,4 +189,23 @@ public class OcrUtil {
 		}
 		return retVal;
 	}
+	
+	public static double[] prepareImageForNeuralNetwork(int[][] image) {
+		double[] retVal = new double[64];
+
+		for (int i = 0; i < image.length; i++) {
+			for (int j = 0; j < image[1].length; j++) {
+				if (image[i][j] < 255) {
+					int ii = i / 8;
+					int jj = j / 8;
+					retVal[ii * 8 + jj]++;
+				}
+			}
+		}
+
+		for (int i = 0; i < retVal.length; i++) {
+			retVal[i] = retVal[i] / 32 - 1;
+		}
+		return retVal;
+	}
 }

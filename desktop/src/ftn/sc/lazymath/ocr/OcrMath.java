@@ -1,13 +1,18 @@
 package ftn.sc.lazymath.ocr;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 import ftn.sc.lazymath.ocr.math.MathOcrUtil;
+import ftn.sc.lazymath.ocr.math.formulatree.AbstractNode;
 import ftn.sc.lazymath.ocr.math.formulatree.Formula;
 import ftn.sc.lazymath.ocr.neuralnetwork.BackPropagation;
+import ftn.sc.lazymath.util.CollectionUtil;
 
 /**
  * Template class which is responsible for graph building.
@@ -15,49 +20,124 @@ import ftn.sc.lazymath.ocr.neuralnetwork.BackPropagation;
  * @author dejan
  *
  */
-public abstract class OcrMath extends OcrCore {
+public class OcrMath extends OcrTemplate {
 
 	protected Map<String, Integer> alfabet = new HashMap<String, Integer>();
 	protected Map<Integer, String> alfabetInverse = new HashMap<Integer, String>();
 	protected BackPropagation backPropagation;
-	// private MathTree mathTree;
 
-	public static Formula formula = new Formula(null);
+	protected Formula formula;
+	private String inputString;
 
-	public OcrMath() {
+	public OcrMath(Map<String, Integer> alfabet, Map<Integer, String> alfabetInverse, BackPropagation backPropagation) {
 		super();
+		this.alfabet = alfabet;
+		this.alfabetInverse = alfabetInverse;
+		this.backPropagation = backPropagation;
+		formula = new Formula(backupRegions);
+	}
+
+	public OcrMath(String inputString) {
+		this.inputString = inputString;
+		formula = new Formula(backupRegions);
 	}
 
 	@Override
-	public abstract String recognize();
+	protected int[][] getBinaryImage(int[][] image) {
+		return ImageUtil.matrixToBinary(image, 200);
+	}
+
+	@Override
+	protected List<RasterRegion> findRegions(int[][] image) {
+		int[][] copiedImage = CollectionUtil.deepCopyIntMatrix(image);
+		regions = ImageUtil.regionLabeling(copiedImage);
+		int regionId = 0;
+		for (RasterRegion rasterRegion : regions) {
+			rasterRegion.determineMoments();
+		}
+		Collections.sort(regions, new RasterRegion.RegionComparer());
+
+		// temp
+		for (RasterRegion rasterRegion : regions) {
+			rasterRegion.tag = String.valueOf(inputString.charAt(regionId));
+			regionId++;
+		}
+		backupRegions.addAll(regions);
+		return regions;
+	}
 
 	/**
-	 * Create graph in this method
+	 * Merge regions and create graph in this method
 	 */
 	@Override
 	protected List<RasterRegion> processRegions(List<RasterRegion> regions) {
-		super.processRegions(regions);
-		formula = new Formula(null);
-		// mathTree = new MathTree();
-		// for (RasterRegion region : regions) {
-		// try {
-		// mathTree.addChild(new Symbol(region.tag.toString(),
-		// mathTree.getRoot(), region));
-		// } catch (NullPointerException e) {
-		// throw new
-		// NullPointerException("@See OcrBasic#findRegions hardcoded string (temporary)");
-		// }
-		// }
-		MathOcrUtil.getDefaultNodes(regions);
+		List<AbstractNode> nodes = new ArrayList<AbstractNode>();
+		nodes.addAll(MathOcrUtil.getFractionNodes(regions));
+		nodes.addAll(MathOcrUtil.getNthRootNodes(regions));
+		nodes.addAll(MathOcrUtil.getDefaultNodes(regions));
+
+		formula.addNodes(nodes);
+
 		System.out.println(formula);
-
-		// findAboveDeprecated(regions, null);
-		// System.out.println(mathTree.toString());
-
 		System.out.println("number of nodes: " + regions.size());
 
 		this.regions = regions;
 		return this.regions;
+	}
+
+	@Override
+	public String recognize() {
+		if (backPropagation == null) {
+			return "Backpropagation is null";
+			// throw new NullPointerException("Backpropagation is null");
+		}
+		StringBuilder stringBuilder = new StringBuilder(regions.size());
+		for (RasterRegion region : regions) {
+			// region.determineMoments();
+			int[][] resizedImage = region.determineNormalImage();
+			resizedImage = ImageUtil.getScaledImage(resizedImage, 64, 64);
+			double[] input = OcrUtil.prepareImageForNeuralNetwork(resizedImage);
+			int number = backPropagation.izracunajCifru(input);
+			stringBuilder.append(alfabetInverse.get(number));
+		}
+		System.out.println("recognized: " + stringBuilder.toString());
+		return stringBuilder.toString();
+	}
+
+	private boolean isUpperRight(RasterRegion r1, RasterRegion r2) {
+		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX && r1.yM > r2.maxY;
+	}
+
+	public Map<String, Integer> getAlfabet() {
+		return this.alfabet;
+	}
+
+	public void setAlfabet(Map<String, Integer> alfabet) {
+		this.alfabet = alfabet;
+	}
+
+	public Map<Integer, String> getAlfabetInverse() {
+		return this.alfabetInverse;
+	}
+
+	public void setAlfabetInverse(Map<Integer, String> alfabetInverse) {
+		this.alfabetInverse = alfabetInverse;
+	}
+
+	public BackPropagation getBackPropagation() {
+		return this.backPropagation;
+	}
+
+	public void setBackPropagation(BackPropagation backPropagation) {
+		this.backPropagation = backPropagation;
+	}
+
+	public String getInputString() {
+		return inputString;
+	}
+
+	public void setInputString(String inputString) {
+		this.inputString = inputString;
 	}
 
 	// public void findAbove(List<RasterRegion> regions, List<MathTreeNode>
@@ -125,53 +205,5 @@ public abstract class OcrMath extends OcrCore {
 	// upperAboveRegions.clear();
 	// }
 	// }
-
-	private boolean isUpperRight(RasterRegion r1, RasterRegion r2) {
-		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX
-				&& r1.yM > r2.maxY;
-	}
-
-	protected double[] prepareImageForNeuralNetwork(int[][] image) {
-		double[] retVal = new double[64];
-
-		for (int i = 0; i < image.length; i++) {
-			for (int j = 0; j < image[1].length; j++) {
-				if (image[i][j] < 255) {
-					int ii = i / 8;
-					int jj = j / 8;
-					retVal[ii * 8 + jj]++;
-				}
-			}
-		}
-
-		for (int i = 0; i < retVal.length; i++) {
-			retVal[i] = retVal[i] / 32 - 1;
-		}
-		return retVal;
-	}
-
-	public Map<String, Integer> getAlfabet() {
-		return this.alfabet;
-	}
-
-	public void setAlfabet(Map<String, Integer> alfabet) {
-		this.alfabet = alfabet;
-	}
-
-	public Map<Integer, String> getAlfabetInverse() {
-		return this.alfabetInverse;
-	}
-
-	public void setAlfabetInverse(Map<Integer, String> alfabetInverse) {
-		this.alfabetInverse = alfabetInverse;
-	}
-
-	public BackPropagation getBackPropagation() {
-		return this.backPropagation;
-	}
-
-	public void setBackPropagation(BackPropagation backPropagation) {
-		this.backPropagation = backPropagation;
-	}
 
 }

@@ -153,7 +153,7 @@ public class BackPropagation {
                 error += 0.5 * calculateErrors(sample);
                 adjustWeights();
             }
-//        	System.out.println("" + it + " " + error);
+        	System.out.println("" + it + " " + error);
             greske.add(new Point2D.Float(it, (float) error));
             if (error < MAX_ERROR)
                 break;

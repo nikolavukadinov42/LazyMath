@@ -16,6 +16,7 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 public abstract class OcrTemplate {
 	
 	protected List<RasterRegion> regions = new ArrayList<RasterRegion>();
+	protected List<RasterRegion> backupRegions = new ArrayList<RasterRegion>();
 
 	public BufferedImage processImage(int[][] image) {
 		image = getBinaryImage(image);
@@ -32,6 +33,14 @@ public abstract class OcrTemplate {
 	
 	public List<RasterRegion> getRegions() {
 		return Collections.unmodifiableList(regions);
+	}
+	
+	public void clearRegions() {
+		regions.clear();
+	}
+	
+	public List<RasterRegion> getBackupRegions() {
+		return backupRegions;
 	}
 
 }

@@ -9,14 +9,16 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
+import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
-import ftn.sc.lazymath.ocr.Ocr;
+import ftn.sc.lazymath.ocr.OcrMath;
 import ftn.sc.lazymath.ocr.OcrTemplate;
 import ftn.sc.lazymath.ocr.OcrTraining;
 import ftn.sc.lazymath.ocr.OcrUtil;
@@ -25,8 +27,8 @@ import ftn.sc.lazymath.util.ImageFilter;
 
 public class MainFrame extends JFrame implements ActionListener {
 
-	public static final int WIDTH = 1800;
-	public static final int HEIGHT = 600;
+	public static final int WIDTH = 1200;
+	public static final int HEIGHT = 650;
 	public static final String TITLE = "Lazy math";
 
 	private JPanel panelControls;
@@ -34,7 +36,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	private JButton buttonBlackAndWhite, buttonFindRegions, buttonFindPows, buttonReset;
 	private ImagePanel imagePanel;
 
-	private String imageFileName = "razlomak.png";
+	private String imageFileName = "comb.png";
 	private JButton buttonFindFractions;
 	private JButton buttonLoadImage;
 
@@ -43,8 +45,18 @@ public class MainFrame extends JFrame implements ActionListener {
 	private JButton buttonTrainingSet;
 	private JButton buttonProcess;
 	private JButton buttonPrepareImage;
-	private OcrTemplate ocr;
-	private JButton buttonTrainServer;
+	private JButton buttonTrainWithOcrMath;
+
+	private OcrTemplate ocrRecognize;
+	private OcrTraining ocrTraining;
+	private AbstractButton buttonFraction;
+	private AbstractButton buttonSqrt;
+	private AbstractButton buttonComb;
+
+	public static final String DEFAULT_INPUT = "2*kab-/kx/kxaab*by";
+	// sqrt - k3x+kxx+2
+	// fraction - //x+/a/ab5b+3
+	// combined - 2*kab-/kx/kxaab*by
 
 	public MainFrame() {
 
@@ -71,11 +83,19 @@ public class MainFrame extends JFrame implements ActionListener {
 		buttonProcess.addActionListener(this);
 		buttonPrepareImage = new JButton("Prepare Image");
 		buttonPrepareImage.addActionListener(this);
-		buttonTrainServer = new JButton("Train Server");
-		buttonTrainServer.addActionListener(this);
+		buttonTrainWithOcrMath = new JButton("Train Server");
+		buttonTrainWithOcrMath.addActionListener(this);
+		
+		buttonFraction = new JButton("Fraction");
+		buttonFraction.addActionListener(this);
+		
+		buttonSqrt = new JButton("Sqrt");
+		buttonSqrt.addActionListener(this);
+		
+		buttonComb = new JButton("Comb");
+		buttonComb.addActionListener(this);
 
-//		inputRecognize = new JTextField("xx+1+(y*2)4", 10);
-		inputRecognize = new JTextField("ab+1ab+1abbb+22x+13+(x+y)2+a", 10);
+		inputRecognize = new JTextField(DEFAULT_INPUT, 20);
 
 		panelControls = new JPanel(new GridLayout(2, 2, 20, 20));
 		JPanel panelUp = new JPanel();
@@ -93,7 +113,11 @@ public class MainFrame extends JFrame implements ActionListener {
 
 		panelUp.add(inputRecognize);
 		panelUp.add(buttonPrepareImage);
-		panelUp.add(buttonTrainServer);
+		panelUp.add(buttonTrainWithOcrMath);
+		
+		panelUp.add(buttonFraction);
+		panelUp.add(buttonSqrt);
+		panelUp.add(buttonComb);
 		panelControls.add(panelUp);
 		panelControls.add(panelBottom);
 
@@ -108,9 +132,16 @@ public class MainFrame extends JFrame implements ActionListener {
 		setSize(WIDTH, HEIGHT);
 		setLocationRelativeTo(null);
 		setVisible(true);
-		
-		
-		buttonTrainServer.doClick();
+
+		initialize();
+
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+		// buttonTrainWithOcrMath.doClick();
+	}
+
+	private void initialize() {
+		ocrTraining = new OcrTraining(inputRecognize.getText());
 	}
 
 	@Override
@@ -123,44 +154,57 @@ public class MainFrame extends JFrame implements ActionListener {
 			OcrUtil.getBinaryMatrix((BufferedImage) imagePanel.getImage());
 			BufferedImage processed = ImageUtil.matrixToBitmap(OcrUtil.image);
 			imagePanel.setImage(processed);
-		} 
-		else if (e.getSource() == buttonLoadImage) {
+		} else if (e.getSource() == buttonLoadImage) {
 			JFileChooser fc = new JFileChooser();
 			fc.setFileFilter(new ImageFilter());
 			int returnVal = fc.showOpenDialog(MainFrame.this);
-	        if (returnVal == JFileChooser.APPROVE_OPTION) {
-	            File file = fc.getSelectedFile();
-	            imagePanel.setImage(file.toString());
-	        }
-		} 
-		else if(e.getSource() == buttonFindRegions) {
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File file = fc.getSelectedFile();
+				if (getOcr() != null) {
+					getOcr().clearRegions();
+				}
+				imagePanel.setImage(file.toString());
+			}
+		} else if (e.getSource() == buttonFindRegions) {
 			OcrUtil.getRegions(getInputRecognize());
 			imagePanel.repaint();
-		} 
-		else if (e.getSource() == buttonTrainingSet) {
+		} else if (e.getSource() == buttonTrainingSet) {
 			OcrUtil.trainingSet();
-		} 
-		else if (e.getSource() == buttonTrain) {
+		} else if (e.getSource() == buttonTrain) {
 			OcrUtil.train();
-		} 
-		else if (e.getSource() == buttonProcess) {
+		} else if (e.getSource() == buttonProcess) {
 			OcrUtil.prepoznaj();
 			imagePanel.repaint();
-		}
-		else if (e.getSource() == buttonPrepareImage) {
-			BufferedImage image = ocr.processImage(ImageUtil.bitmapToMatrix((BufferedImage) imagePanel.getImage()));
+		} else if (e.getSource() == buttonPrepareImage) {
+			ocrRecognize = new OcrMath(inputRecognize.getText().trim());
+			BufferedImage image = ocrRecognize.processImage(ImageUtil.bitmapToMatrix((BufferedImage) imagePanel.getImage()));
 			imagePanel.setImage(image);
-			ocr.recognize();
+			ocrRecognize.recognize();
+		} else if (e.getSource() == buttonTrainWithOcrMath) {
+			String input = inputRecognize.getText().trim();
+			if (input.isEmpty()) {
+				JOptionPane.showMessageDialog(this, "Please provide an input string");
+				return;
+			}
+			ocrTraining = new OcrTraining(input);
+			ocrTraining.processImage(ImageUtil.bitmapToMatrix((BufferedImage) imagePanel.getImage()));
+		} else if (e.getSource() == buttonFraction) {
+			inputRecognize.setText("//x+/a/ab5b+3");
+			imagePanel.setImage("./res/example.png");
+		} else if (e.getSource() == buttonSqrt) {
+			inputRecognize.setText("k3x+kxx+2");
+			imagePanel.setImage("./res/example.gif");
+		} else if (e.getSource() == buttonComb) {
+			inputRecognize.setText("2*kab-/kx/kxaab*by");
+			imagePanel.setImage("./res/comb.png");
 		}
-		else if (e.getSource() == buttonTrainServer) {
-			OcrTraining temp = new OcrTraining("ab+1ab+1abbb+22x+13+(x+y)2+a");//ab+1ab+1abbb+22x+13+(x+y)2+a
-			temp.processImage(ImageUtil.bitmapToMatrix((BufferedImage) imagePanel.getImage()));
-			ocr = new Ocr(temp.getAlfabet(), temp.getAlfabetInverse(), temp.getBackPropagation());
-		}
+		// sqrt - k3x+kxx+2
+		// fraction - //x+/a/ab5b+3
+		// combined - 2*kab-/kx/kxaab*by
 	}
 
 	public OcrTemplate getOcr() {
-		return ocr;
+		return ocrRecognize;
 	}
 
 	public String getInputRecognize() {
@@ -169,5 +213,13 @@ public class MainFrame extends JFrame implements ActionListener {
 
 	public void setInputRecognize(JTextField inputRecognize) {
 		this.inputRecognize = inputRecognize;
+	}
+
+	public String getImageFileName() {
+		return imageFileName;
+	}
+
+	public void setImageFileName(String imageFileName) {
+		this.imageFileName = imageFileName;
 	}
 }
