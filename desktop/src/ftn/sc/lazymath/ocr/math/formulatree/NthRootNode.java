@@ -12,79 +12,79 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
  */
 public class NthRootNode extends AbstractNode {
 
-    private AbstractNode exponent;
-    private List<AbstractNode> elements;
+	private AbstractNode exponent;
+	private List<AbstractNode> elements;
 
-    public NthRootNode() {
-        this.elements = new ArrayList<>();
-    }
+	public NthRootNode() {
+		this.elements = new ArrayList<>();
+	}
 
-    @Override
-    public String getCharacters() {
-        // sqrt(elements)^(1/exponent)
-        return null;
-    }
+	@Override
+	public List<RasterRegion> getRasterRegions() {
+		List<RasterRegion> ret = new ArrayList<>();
 
-    @Override
-    public List<RasterRegion> getRasterRegions() {
-        List<RasterRegion> ret = new ArrayList<>();
+		ret.add(this.region);
 
-        ret.add(region);
+		if (this.exponent != null) {
+			ret.addAll(this.exponent.getRasterRegions());
+		}
 
-        if (exponent != null) {
-            ret.addAll(exponent.getRasterRegions());
-        }
+		for (AbstractNode node : this.elements) {
+			ret.addAll(node.getRasterRegions());
+		}
 
-        for (AbstractNode node : elements) {
-            ret.addAll(node.getRasterRegions());
-        }
+		return ret;
+	}
 
-        return ret;
-    }
-    
-    @Override
-    public String toString() {
-    	StringBuilder sb = new StringBuilder();
-    	sb.append("sqrt(");
-    	
-    	Collections.sort(elements, new Comparator<AbstractNode>() {
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		Collections.sort(this.elements, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
 				return (int) (firstNode.minX - secondNode.minX);
 			}
 		});
 
-    	for (AbstractNode element : elements) {
+		sb.append("(");
+
+		for (AbstractNode element : this.elements) {
 			sb.append(element.toString());
 		}
-    	if (exponent != null && exponent.getRasterRegion() != null) {
-    		sb.append("," + exponent.toString());
-    	}
-    	sb.append(")");
-    	return sb.toString();
-    }
 
-    public void addElement(AbstractNode node) {
-        elements.add(node);
-    }
+		if (this.exponent != null && this.exponent.getRasterRegion() != null) {
+			sb.append(")^(1/(" + this.exponent.toString() + "))");
+		} else {
+			sb.append(")^(1/2)");
+		}
 
-    public void addElements(List<AbstractNode> nodes) {
-        elements.addAll(nodes);
-    }
+		sb.append(")");
 
-    public AbstractNode getExponent() {
-        return exponent;
-    }
+		return sb.toString();
+	}
 
-    public void setExponent(AbstractNode exponent) {
-        this.exponent = exponent;
-    }
+	public void addElement(AbstractNode node) {
+		this.elements.add(node);
+	}
 
-    public List<AbstractNode> getElements() {
-        return elements;
-    }
+	public void addElements(List<AbstractNode> nodes) {
+		this.elements.addAll(nodes);
+	}
 
-    public void setElements(List<AbstractNode> elements) {
-        this.elements = elements;
-    }
+	public AbstractNode getExponent() {
+		return this.exponent;
+	}
+
+	public void setExponent(AbstractNode exponent) {
+		this.exponent = exponent;
+	}
+
+	public List<AbstractNode> getElements() {
+		return this.elements;
+	}
+
+	public void setElements(List<AbstractNode> elements) {
+		this.elements = elements;
+	}
 }

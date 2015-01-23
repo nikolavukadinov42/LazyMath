@@ -7,40 +7,54 @@ import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
+import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
 
 /**
  * Template class for OCR algorithm.
+ *
  * @author dejan
  *
  */
 public abstract class OcrTemplate {
-	
+
+	protected NeuralNetwork neuralNetwork;
+
 	protected List<RasterRegion> regions = new ArrayList<RasterRegion>();
 	protected List<RasterRegion> backupRegions = new ArrayList<RasterRegion>();
 
+	public OcrTemplate() {
+	}
+
+	public OcrTemplate(NeuralNetwork neuralNetwork) {
+		this.neuralNetwork = neuralNetwork;
+	}
+
 	public BufferedImage processImage(int[][] image) {
-		image = getBinaryImage(image);
-		regions = findRegions(image);
-		regions = processRegions(regions);
+		image = this.getBinaryImage(image);
+		this.findRegions(image);
+		this.processRegions(this.regions);
+
 		return ImageUtil.matrixToBitmap(image);
 	}
-	
+
 	public abstract String recognize();
-	
+
 	protected abstract int[][] getBinaryImage(int[][] image);
-	protected abstract List<RasterRegion> findRegions(int[][] image);
-	protected abstract List<RasterRegion> processRegions(List<RasterRegion> regions);
-	
+
+	protected abstract void findRegions(int[][] image);
+
+	protected abstract void processRegions(List<RasterRegion> regions);
+
 	public List<RasterRegion> getRegions() {
-		return Collections.unmodifiableList(regions);
+		return Collections.unmodifiableList(this.regions);
 	}
-	
+
 	public void clearRegions() {
-		regions.clear();
+		this.regions.clear();
 	}
-	
+
 	public List<RasterRegion> getBackupRegions() {
-		return backupRegions;
+		return this.backupRegions;
 	}
 
 }
