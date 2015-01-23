@@ -11,8 +11,6 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +18,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
+import ftn.sc.lazymath.ocr.OcrMath;
 import ftn.sc.lazymath.ocr.OcrUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 
@@ -29,13 +28,13 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 	private String imagePath;
 	private Point translate;
 	private Rectangle ImageFrame;
-	private Dimension preferredSize = new Dimension(1800, 480);
+	private Dimension preferredSize = new Dimension(1200, 480);
 	private MainFrame mainFrame;
 
 	public ImagePanel(MainFrame mainFrame) {
 		super(new GridLayout(4, 4, 20, 20));
 		this.mainFrame = mainFrame;
-		imagePath = "./res/exponents2.png";
+		imagePath = "./res/" + mainFrame.getImageFileName();
 		setImage(imagePath);
 		ImageFrame = new Rectangle(0, 0, image.getWidth(null), image.getHeight(null));
 		translate = new Point();
@@ -79,16 +78,17 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 
 	public void drawRegionsFrame(Graphics2D g2) {
 		g2.setColor(Color.red);
-		if (mainFrame.getOcr() != null && mainFrame.getOcr().getRegions() != null) {
-			int regionsSize = mainFrame.getOcr().getRegions().size();
-			int stringLen = OcrUtil.rez.length();
+		if (mainFrame.getOcr() != null && mainFrame.getOcr().getBackupRegions() != null) {
+			int regionsSize = mainFrame.getOcr().getBackupRegions().size();
+			OcrMath ocr = (OcrMath) mainFrame.getOcr();
+			int stringLen = ocr.getInputString().length();
 			// System.out.println(regionsSize);
-			if (mainFrame.getOcr().getRegions().size() > 0) {
+			if (mainFrame.getOcr().getBackupRegions().size() > 0) {
 				int i = 0;
-				for (RasterRegion r : mainFrame.getOcr().getRegions()) {
+				for (RasterRegion r : mainFrame.getOcr().getBackupRegions()) {
 					g2.drawRect(r.minX - 1, r.minY - 1, r.maxX - r.minX + 2, r.maxY - r.minY + 2);
 					if (regionsSize == stringLen) {
-						g2.drawString(String.valueOf(OcrUtil.rez.charAt(i)), r.minX - 1, r.minY - 1);
+						g2.drawString(String.valueOf(ocr.getInputString().charAt(i)), r.minX - 1, r.minY - 1);
 					}
 					i++;
 				}

@@ -11,11 +11,12 @@ public abstract class AbstractNode {
 
 	protected AbstractNode parent;
 	protected RasterRegion region;
+	public double minX;
 
 	public abstract String getCharacters();
 
 	public abstract List<RasterRegion> getRasterRegions();
-
+	
 	public RasterRegion getRasterRegion() {
 		return this.region;
 	}
@@ -23,4 +24,6 @@ public abstract class AbstractNode {
 	public void setRasterRegion(RasterRegion region) {
 		this.region = region;
 	}
+
+	
 }

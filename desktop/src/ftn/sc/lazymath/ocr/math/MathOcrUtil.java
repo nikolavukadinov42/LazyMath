@@ -24,8 +24,7 @@ public class MathOcrUtil {
 		Collections.sort(sortedBySize, new Comparator<RasterRegion>() {
 			@Override
 			public int compare(RasterRegion rr1, RasterRegion rr2) {
-				return (int) (rr2.majorAxisLength * rr2.minorAxisLength - rr1.majorAxisLength
-						* rr1.minorAxisLength);
+				return (int) (rr2.majorAxisLength * rr2.minorAxisLength - rr1.majorAxisLength * rr1.minorAxisLength);
 			}
 		});
 
@@ -33,8 +32,8 @@ public class MathOcrUtil {
 		for (RasterRegion r1 : regions) {
 			if (!ignore.contains(r1)) {
 				NthRootNode nthRootNode = createNthRootNode(r1, regions);
-
 				if (nthRootNode != null) {
+					nthRootNode.minX = r1.minX;
 					ret.add(nthRootNode);
 					ignore.addAll(nthRootNode.getRasterRegions());
 				}
@@ -59,16 +58,14 @@ public class MathOcrUtil {
 
 				// check if r2 root exponent for r1
 				double cornerSize = (r1.maxY - r2.minY) / 2;
-				if ((r2.xM > r1.minX) && (r2.xM < (r1.minX + cornerSize)) && (r2.yM > r1.minY)
-						&& (r2.yM < r1.minY + cornerSize)) {
+				if ((r2.xM > r1.minX) && (r2.xM < (r1.minX + cornerSize)) && (r2.yM > r1.minY) && (r2.yM < r1.minY + cornerSize)) {
 					exponent = r2;
 					used = true;
 				}
 
 				// check if r2 element inside r1
 				if (!used) {
-					if ((r2.xM > r1.minX) && (r2.xM < r1.maxX) && (r2.yM > r1.minY)
-							&& (r2.yM < r1.maxY)) {
+					if ((r2.xM > r1.minX) && (r2.xM < r1.maxX) && (r2.yM > r1.minY) && (r2.yM < r1.maxY)) {
 						elements.add(r2);
 					}
 				}
@@ -89,24 +86,19 @@ public class MathOcrUtil {
 	}
 
 	public static List<AbstractNode> getDefaultNodes(List<RasterRegion> regions) {
-		List<AbstractNode> ret = new ArrayList<AbstractNode>();
-		List<RasterRegion> sortedRegionsByX = new ArrayList<RasterRegion>(regions);
+		List<AbstractNode> ret = new ArrayList<>();
 
-		Collections.sort(sortedRegionsByX, new RasterRegion.RegionComparer());
-		ret = getExponents(sortedRegionsByX, ret, null);
-		// for (int i = 0; i < sortedRegionsByX.size(); i++) {
-		// DefaultNode defaultNode = new DefaultNode(sortedRegionsByX.get(i));
-		// System.out.println("created default node from: " +
-		// sortedRegionsByX.get(i).tag);
-		//
-		//
-		//
-		// ret.add(defaultNode);
-		// }
-		for (AbstractNode r : ret) {
-			System.out.println(r);
+		for (RasterRegion region : regions) {
+			DefaultNode defaultNode = new DefaultNode(region);
+			defaultNode.minX = region.minX;
+
+			// TODO exponent
+
+			ret.add(defaultNode);
 		}
-		regions.removeAll(ret);
+		for (AbstractNode abstractNode : ret) {
+			regions.remove(abstractNode.getRasterRegion());
+		}
 
 		return ret;
 	}
@@ -123,8 +115,7 @@ public class MathOcrUtil {
 	 * @param ret
 	 * @param parent
 	 */
-	public static List<AbstractNode> getExponents(List<RasterRegion> regions,
-			List<AbstractNode> ret, DefaultNode parent) {
+	public static List<AbstractNode> getExponents(List<RasterRegion> regions, List<AbstractNode> ret, DefaultNode parent) {
 		// List<RasterRegion> exponents = new ArrayList<RasterRegion>();
 		// List<AbstractNode> exponentsAbstract = new ArrayList<AbstractNode>();
 		// for (int i = 0; i < regions.size(); i++) {
@@ -174,8 +165,7 @@ public class MathOcrUtil {
 	}
 
 	private static boolean isUpperRight(RasterRegion r1, RasterRegion r2) {
-		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX
-				&& r1.yM > r2.maxY;
+		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX && r1.yM > r2.maxY;
 	}
 
 	public static List<AbstractNode> getFractionNodes(List<RasterRegion> regions) {
@@ -184,11 +174,21 @@ public class MathOcrUtil {
 		List<RasterRegion> fractionsLines = new ArrayList<>();
 
 		// get all possible fraction lines
+		System.out.println("fraction Lines:");
 		for (RasterRegion region : regions) {
 			if (MathOcrUtil.isFractionLineOrMinus(region)) {
 				fractionsLines.add(region);
+				System.out.println(region.tag + " " + region.eccentricity);
 			}
 		}
+		
+		if (fractionsLines.size() == 0) {
+			return ret;
+		}
+		
+//		for (RasterRegion rasterRegion : fractionsLines) {
+//			regions.remove(rasterRegion);
+//		}
 
 		// sort by length
 		Collections.sort(fractionsLines, new Comparator<RasterRegion>() {
@@ -198,22 +198,20 @@ public class MathOcrUtil {
 			}
 		});
 
-		System.out.println("getFractionNodes fraction lines num "
-				+ String.valueOf(fractionsLines.size()));
+		System.out.println("getFractionNodes fraction lines num " + String.valueOf(fractionsLines.size()));
 		List<RasterRegion> ignore = new ArrayList<>();
 		for (RasterRegion fractionLine : fractionsLines) {
 			// check if the fraction line is not already in some other fraction
 			if (!ignore.contains(fractionLine)) {
 				FractionNode fn = createFractionNode(fractionLine, regions);
-
 				// if the its a fraction line create a fraction
 				if (fn != null) {
+					fn.minX = fractionLine.minX;
+					fn.setFractionLine(fractionLine);
 					ret.add(fn);
-					System.out.println("getFractionNodes-" + "new fraction");
-					System.out.println("getFractionNodes num-"
-							+ String.valueOf(fn.getNumerators().size()));
-					System.out.println("getFractionNodes denom-"
-							+ String.valueOf(fn.getDenominators().size()));
+					System.out.println("Successfully created fraction");
+					System.out.println("\tAbove: " + String.valueOf(fn.getNumerators().size()));
+					System.out.println("\tBelow: " + String.valueOf(fn.getDenominators().size()));
 
 					// add all regions that are in the new fraction to the
 					// ignore
@@ -228,8 +226,7 @@ public class MathOcrUtil {
 		return ret;
 	}
 
-	public static FractionNode createFractionNode(RasterRegion fractionLine,
-			List<RasterRegion> regions) {
+	public static FractionNode createFractionNode(RasterRegion fractionLine, List<RasterRegion> regions) {
 		FractionNode ret = null;
 
 		List<RasterRegion> above = new ArrayList<>();
@@ -242,8 +239,10 @@ public class MathOcrUtil {
 				if (region.xM > fractionLine.minX && region.xM < fractionLine.maxX) {
 					// region above line
 					if (region.yM < fractionLine.yM) {
+						System.out.println("above: " + region.tag);
 						above.add(region);
 					} else { // region below line
+						System.out.println("below: " + region.tag);
 						below.add(region);
 					}
 				}
@@ -251,7 +250,6 @@ public class MathOcrUtil {
 		}
 
 		System.out.println("createFractionNode " + above.size() + ", " + below.size());
-		;
 
 		// if above or below are empty its not a fraction
 		if (!above.isEmpty() && !below.isEmpty()) {
@@ -274,8 +272,9 @@ public class MathOcrUtil {
 
 	public static boolean isFractionLineOrMinus(RasterRegion region) {
 		boolean ret = false;
-
-		if (region.eccentricity < 0.025) {
+		// old value = 0.025
+		double ecentricityTreshold = 0.025;
+		if (region.eccentricity < ecentricityTreshold) {
 			double theta = region.theta;
 
 			if (theta > Math.PI / 2) {

@@ -12,6 +12,7 @@ public class FractionNode extends AbstractNode {
 
     private List<AbstractNode> numerators;
     private List<AbstractNode> denominators;
+    private RasterRegion fractionLine;
 
     public FractionNode() {
         this.numerators = new ArrayList<>();
@@ -39,6 +40,34 @@ public class FractionNode extends AbstractNode {
         }
 
         return ret;
+    }
+    
+    @Override
+    public String toString() {
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("(");
+    	for (AbstractNode above : numerators) {
+			sb.append(above);
+		}
+    	sb.append(")");
+    	sb.append("/");
+    	sb.append("(");
+    	for (AbstractNode below : denominators) {
+    		sb.append(below);
+		}
+    	sb.append(")");
+    	
+    	return sb.toString();
+    }
+    
+    public boolean isInside(RasterRegion root) {
+    	System.out.println("ROOT: " + root.tag);
+    	System.out.println("FL: " + fractionLine.tag);
+    	if ((fractionLine.xM > root.minX) && (fractionLine.xM < root.maxX) && (fractionLine.yM > root.minY) && (fractionLine.yM < root.maxY)) {
+			return true;
+		}
+    	
+    	return false;
     }
 
     public void addNumerator(AbstractNode node) {
@@ -72,4 +101,13 @@ public class FractionNode extends AbstractNode {
     public void setDenominators(List<AbstractNode> denominators) {
         this.denominators = denominators;
     }
+
+	public RasterRegion getFractionLine() {
+		return fractionLine;
+	}
+
+	public void setFractionLine(RasterRegion fraction) {
+		this.fractionLine = fraction;
+	}
+
 }

@@ -7,9 +7,6 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 import ftn.sc.lazymath.ocr.neuralnetwork.BackPropagation;
 
 /**
- * Class is training BP. If we one day move this to server-client app, this
- * should be located on server and expose alphabet and necessary methods from BP
- * class.
  * 
  * @author dejan
  *
@@ -21,6 +18,7 @@ public class OcrTraining extends OcrMath {
 	private String inputString;
 
 	public OcrTraining(String inputString) {
+		super(inputString);
 		this.inputString = inputString;
 	}
 
@@ -36,6 +34,7 @@ public class OcrTraining extends OcrMath {
 		int count = 0;
 		for (RasterRegion rasterRegion : regions) {
 			rasterRegion.tag = String.valueOf(inputString.charAt(regionId));
+			System.out.println(rasterRegion.tag);
 			if (!alfabet.containsKey(rasterRegion.tag)) {
 				alfabet.put((String) rasterRegion.tag, count);
 				alfabetInverse.put(count, (String) rasterRegion.tag);
@@ -61,7 +60,7 @@ public class OcrTraining extends OcrMath {
 			RasterRegion region = regions.get(bpSample);
 			int[][] regionImage = region.determineNormalImage();
 			int[][] scaledImage = ImageUtil.getScaledImage(regionImage, 64, 64);
-			double[] bpInput = prepareImageForNeuralNetwork(scaledImage);
+			double[] bpInput = OcrUtil.prepareImageForNeuralNetwork(scaledImage);
 			int index = alfabet.get(region.tag);
 			for (int k = 0; k < bpInput.length; k++) {
 				trainingSet[bpSample][0][k] = bpInput[k];
