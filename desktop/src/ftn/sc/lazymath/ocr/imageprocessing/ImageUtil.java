@@ -77,6 +77,45 @@ public class ImageUtil {
 		return ret;
 	}
 
+	public static int[][] matrixToOtsuTiles(int[][] image, int R, int C) {
+		int w = image[0].length;
+		int h = image.length;
+
+		int[][] retVal = new int[h][w];
+
+		int dW = w / C;
+		int dH = h / R;
+
+		for (int i = 0; i < dH; i++) {
+			for (int j = 0; j < dW; j++) {
+				retVal[i][j] = 0;
+			}
+		}
+
+		for (int r = 0; r < R - 1; r++) {
+			for (int c = 0; c < C - 1; c++) {
+				int[][] tile = new int[dH][dW];
+				int[][] otsuTile = null;
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						tile[i][j] = image[r * dH + i][c * dW + j];
+					}
+				}
+
+				otsuTile = otsu(tile);
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						retVal[r * dH + i][c * dW + j] = otsuTile[i][j];
+					}
+				}
+			}
+		}
+
+		return retVal;
+	}
+
 	public static int[][] matrixToBinaryTiles(int[][] image, int R, int C) {
 		int w = image[0].length;
 		int h = image.length;
@@ -132,21 +171,38 @@ public class ImageUtil {
 				histogram[DD / 2]++;
 
 				// meanDD += DD;
+				boolean allBlack = false;
+				int count = (int) (dH * dW);
 				for (int y = 0; y < dH; y++) {
 					for (int x = 0; x < dW; x++) {
+
 						if (DD > 20) {
 							if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT) {// means[r,
 								// c]){
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+								count--;
 							} else {
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
 							}
 						} else {
 							if (TT < 80) {
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+								count--;
 							} else {
 								retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
 							}
+						}
+					}
+				}
+
+				if (count < 10) {
+					allBlack = true;
+				}
+
+				if (allBlack) {
+					for (int y = 0; y < dH; y++) {
+						for (int x = 0; x < dW; x++) {
+							retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
 						}
 					}
 				}
@@ -211,20 +267,20 @@ public class ImageUtil {
 
 		for (int y = 0; y < h; y++) {
 			for (int x = 0; x < w; x++) {
-				int count = n;
+				int count = 0;
 
 				for (int t = 0; t < n; t++) {
 					if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
 						continue;
 					}
 
-					if (image[y + ii[t]][x + jj[t]] != 0) {
-						count--;
+					if (image[y + ii[t]][x + jj[t]] == 0) {
+						count++;
 					}
 
 				}
 
-				retVal[y][x] = count >= 3 ? 0 : 255;
+				retVal[y][x] = count <= 1 ? 255 : 0;
 			}
 		}
 
@@ -241,7 +297,7 @@ public class ImageUtil {
 
 		for (int y = 0; y < h; y++) {
 			for (int x = 0; x < w; x++) {
-				int count = n;
+				int count = 0;
 
 				for (int t = 0; t < n; t++) {
 					if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
@@ -249,12 +305,12 @@ public class ImageUtil {
 					}
 
 					if (image[y + ii[t]][x + jj[t]] == 0) {
-						count--;
+						count++;
 					}
 
 				}
 
-				retVal[y][x] = count >= 3 ? 255 : 0;
+				retVal[y][x] = count >= 2 ? 0 : 255;
 			}
 		}
 
@@ -374,6 +430,7 @@ public class ImageUtil {
 				if (between > max) {
 					threshold2 = i;
 				}
+
 				max = between;
 			}
 		}

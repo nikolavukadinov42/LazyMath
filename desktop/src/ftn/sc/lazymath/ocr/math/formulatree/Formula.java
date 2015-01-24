@@ -48,7 +48,7 @@ public class Formula {
 		});
 
 		for (AbstractNode abstractNode : this.nodes) {
-			sb.append(abstractNode + " \t");
+			sb.append(abstractNode + "  ");
 		}
 
 		return sb.toString();

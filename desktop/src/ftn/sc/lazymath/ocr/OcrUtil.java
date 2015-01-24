@@ -21,20 +21,38 @@ public class OcrUtil {
 	public static Map<String, Integer> alfabet = new HashMap<String, Integer>();
 	public static Map<Integer, String> alfabetInv = new HashMap<Integer, String>();
 
-	public static List<RasterRegion> convertImage(BufferedImage bitmap) {
+	public static BufferedImage convertImage(BufferedImage bitmap) {
+		int[][] image = convertImageToMatrix(bitmap);
+
+		BufferedImage processed = ImageUtil.matrixToBitmap(image);
+
+		return processed;
+	}
+
+	public static int[][] convertImageToMatrix(BufferedImage bitmap) {
+		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
+
+		int h = (int) Math.floor((double) image.length / 50);
+		int w = (int) Math.floor((double) image[0].length / 50);
+
+		image = ImageUtil.matrixToBinaryTiles(image, h, w);
+
+		image = ImageUtil.dilation(image);
+		image = ImageUtil.erosion(image);
+		// image = ImageUtil.dilation(image);
+
+		return image;
+	}
+
+	public static List<RasterRegion> getRegions(BufferedImage bitmap) {
 		List<RasterRegion> regions = null;
 
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
+		image = ImageUtil.matrixToBinary(image, 200);
+		image = ImageUtil.dilation(image);
 
-		int[][] blackAndWhite = ImageUtil.matrixToBinary(image, 200);
+		regions = ImageUtil.regionLabeling(image);
 
-		// int[][] erosioned = ImageUtil.erosion(blackAndWhite);
-		//
-		// int[][] dilated = ImageUtil.dilation(erosioned);
-
-		BufferedImage processed = ImageUtil.matrixToBitmap(blackAndWhite);
-
-		regions = ImageUtil.regionLabeling(blackAndWhite);
 		for (RasterRegion rasterRegion : regions) {
 			rasterRegion.determineMoments();
 		}
@@ -44,34 +62,39 @@ public class OcrUtil {
 		return regions;
 	}
 
-	public static void getRegions(String slova) {
-		int[][] temp = deepCopyIntMatrix(image);
-		regions = ImageUtil.regionLabeling(temp);
+	public static List<RasterRegion> getRegions(int[][] image) {
+		List<RasterRegion> regions = null;
+
+		regions = ImageUtil.regionLabeling(image);
+
+		List<RasterRegion> filtered = new ArrayList<RasterRegion>();
+		for (RasterRegion rasterRegion : regions) {
+			if (!(rasterRegion.points.size() < 20)) {
+				filtered.add(rasterRegion);
+			}
+		}
+
+		regions = filtered;
+
+		for (RasterRegion rasterRegion : regions) {
+			rasterRegion.determineMoments();
+		}
 
 		Collections.sort(regions, new RasterRegion.RegionComparer());
 
-		int regId = 0;
-		int redBr = 0;
-		for (RasterRegion rasterRegion : regions) {
-			rasterRegion.determineMoments();
-			rasterRegion.tag = String.valueOf(slova.charAt(regId));
-			if (!alfabet.containsKey(rasterRegion.tag)) {
-				alfabet.put((String) rasterRegion.tag, redBr);
-				alfabetInv.put(redBr, (String) rasterRegion.tag);
-				redBr++;
-			}
-			regId++;
-		}
+		return regions;
 	}
 
 	public static int[][] deepCopyIntMatrix(int[][] input) {
 		if (input == null) {
 			return null;
 		}
+
 		int[][] result = new int[input.length][];
 		for (int r = 0; r < input.length; r++) {
 			result[r] = input[r].clone();
 		}
+
 		return result;
 	}
 
