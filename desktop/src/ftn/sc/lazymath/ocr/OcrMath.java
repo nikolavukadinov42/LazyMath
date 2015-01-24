@@ -1,7 +1,6 @@
 package ftn.sc.lazymath.ocr;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
@@ -43,13 +42,7 @@ public class OcrMath extends OcrTemplate {
 	@Override
 	protected void findRegions(int[][] image) {
 		int[][] copiedImage = CollectionUtil.deepCopyIntMatrix(image);
-		this.regions = ImageUtil.regionLabeling(copiedImage);
-
-		for (RasterRegion rasterRegion : this.regions) {
-			rasterRegion.determineMoments();
-		}
-
-		Collections.sort(this.regions, new RasterRegion.RegionComparer());
+		this.regions = OcrUtil.getRegions(copiedImage);
 
 		this.backupRegions.addAll(this.regions);
 	}
@@ -81,28 +74,30 @@ public class OcrMath extends OcrTemplate {
 	private void setNodeCharacter(AbstractNode node) {
 		RasterRegion r = node.getRasterRegion();
 
-		if (node instanceof DefaultNode) {
-			r.tag = this.neuralNetwork.recognize(r);
-		} else if (node instanceof NthRootNode) {
-			NthRootNode nrn = (NthRootNode) node;
+		if (r != null) {
+			if (node instanceof DefaultNode) {
+				r.tag = this.neuralNetwork.recognize(r);
+			} else if (node instanceof NthRootNode) {
+				NthRootNode nrn = (NthRootNode) node;
 
-			AbstractNode e = nrn.getExponent();
-			if (e != null) {
-				this.setNodeCharacter(e);
-			}
+				AbstractNode e = nrn.getExponent();
+				if (e != null) {
+					this.setNodeCharacter(e);
+				}
 
-			for (AbstractNode n : nrn.getElements()) {
-				this.setNodeCharacter(n);
-			}
-		} else if (node instanceof FractionNode) {
-			FractionNode fn = (FractionNode) node;
+				for (AbstractNode n : nrn.getElements()) {
+					this.setNodeCharacter(n);
+				}
+			} else if (node instanceof FractionNode) {
+				FractionNode fn = (FractionNode) node;
 
-			for (AbstractNode n : fn.getNumerators()) {
-				this.setNodeCharacter(n);
-			}
+				for (AbstractNode n : fn.getNumerators()) {
+					this.setNodeCharacter(n);
+				}
 
-			for (AbstractNode n : fn.getDenominators()) {
-				this.setNodeCharacter(n);
+				for (AbstractNode n : fn.getDenominators()) {
+					this.setNodeCharacter(n);
+				}
 			}
 		}
 	}

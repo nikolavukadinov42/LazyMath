@@ -146,7 +146,8 @@ public class MainFrame extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == this.buttonBlackAndWhite) {
-			int[][] image = ImageUtil.bitmapToMatrix((BufferedImage) this.imagePanel.getImage());
+			int[][] image = OcrUtil
+					.convertImageToMatrix((BufferedImage) this.imagePanel.getImage());
 			BufferedImage processed = ImageUtil.matrixToBitmap(image);
 			this.imagePanel.setImage(processed);
 		} else if (e.getSource() == this.buttonLoadImage) {
@@ -161,21 +162,24 @@ public class MainFrame extends JFrame implements ActionListener {
 				this.imagePanel.setImage(file.toString());
 			}
 		} else if (e.getSource() == this.buttonFindRegions) {
-			OcrUtil.getRegions(this.getInputRecognize());
-			this.imagePanel.repaint();
 		} else if (e.getSource() == this.buttonTrain) {
-			this.inputRecognize.setText("x+y1*2(3)4567-890");
-			this.imagePanel.setImage("./res/trainingSet.png");
-			List<RasterRegion> regions = OcrUtil.convertImage((BufferedImage) this.imagePanel
+			this.inputRecognize.setText("0123456789abcdxyz+-/*±");
+			this.imagePanel.setImage("./res/ts2.png");
+			List<RasterRegion> regions = OcrUtil.getRegions((BufferedImage) this.imagePanel
 					.getImage());
 			NeuralNetwork nn = new NeuralNetwork(regions, this.getInputRecognize());
 			this.ocrMath = new OcrMath(nn);
 		} else if (e.getSource() == this.buttonProcess) {
 			if (this.ocrMath != null) {
-				int[][] image = ImageUtil
-						.bitmapToMatrix((BufferedImage) this.imagePanel.getImage());
-				int[][] blackAndWhite = ImageUtil.matrixToBinary(image, 200);
-				this.ocrMath.processImage(blackAndWhite);
+				int[][] image = OcrUtil.convertImageToMatrix((BufferedImage) this.imagePanel
+						.getImage());
+
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(image);
+
+				this.imagePanel.setImage(bitmap);
+
+				this.ocrMath.processImage(image);
+
 				System.out.println(this.ocrMath.recognize());
 			}
 		} else if (e.getSource() == this.buttonPrepareImage) {

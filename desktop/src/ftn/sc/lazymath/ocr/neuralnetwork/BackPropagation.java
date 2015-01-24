@@ -14,7 +14,7 @@ public class BackPropagation {
 	private int layersNum = 3;
 	private int samplesNum = 4;
 	private int maxIterations = 100000;
-	private double maxError = 0.005;
+	private double maxError = 0.00005;
 	private int attemptsNum = 100;
 
 	public NeuralNetworkLayer[] layers = new NeuralNetworkLayer[this.layersNum];
