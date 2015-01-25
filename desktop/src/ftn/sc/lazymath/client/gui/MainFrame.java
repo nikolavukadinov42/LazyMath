@@ -167,6 +167,13 @@ public class MainFrame extends JFrame implements ActionListener {
 			this.imagePanel.setImage("./res/ts2.png");
 			List<RasterRegion> regions = OcrUtil.getRegions((BufferedImage) this.imagePanel
 					.getImage());
+
+			int[][] image = ImageUtil.bitmapToMatrix((BufferedImage) this.imagePanel.getImage());
+			image = ImageUtil.matrixToBinary(image, 200);
+			image = ImageUtil.dilation(image);
+
+			this.imagePanel.setImage(ImageUtil.matrixToBitmap(image));
+
 			NeuralNetwork nn = new NeuralNetwork(regions, this.getInputRecognize());
 			this.ocrMath = new OcrMath(nn);
 		} else if (e.getSource() == this.buttonProcess) {

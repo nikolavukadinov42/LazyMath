@@ -32,13 +32,15 @@ public class OcrUtil {
 	public static int[][] convertImageToMatrix(BufferedImage bitmap) {
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
 
-		int h = (int) Math.floor((double) image.length / 50);
-		int w = (int) Math.floor((double) image[0].length / 50);
+		// image = ImageUtil.getScaledImage(image, 600, 600);
 
-		image = ImageUtil.matrixToBinaryTiles(image, h, w);
+		// int h = (int) Math.floor((double) image.length / 100);
+		// int w = (int) Math.floor((double) image[0].length / 100);
 
-		image = ImageUtil.dilation(image);
-		image = ImageUtil.erosion(image);
+		image = ImageUtil.christiansMethod(image);
+
+		// image = ImageUtil.dilation(image);
+		// image = ImageUtil.erosion(image);
 		// image = ImageUtil.dilation(image);
 
 		return image;
@@ -49,7 +51,7 @@ public class OcrUtil {
 
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
 		image = ImageUtil.matrixToBinary(image, 200);
-		image = ImageUtil.dilation(image);
+		// image = ImageUtil.dilation(image);
 
 		regions = ImageUtil.regionLabeling(image);
 
