@@ -1,5 +1,6 @@
 package ftn.sc.lazymath.ocr.math.formulatree;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,13 +38,25 @@ public class NthRootNode extends AbstractNode {
 	}
 
 	@Override
+	public Point getCenter() {
+		double x = 0;
+		double y = 0;
+
+		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+
+		return new Point((int) (x / (this.elements.size() + 1)),
+				(int) (y / (this.elements.size() + 1)));
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
 		Collections.sort(this.elements, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-				return (int) (firstNode.minX - secondNode.minX);
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
 
@@ -87,4 +100,5 @@ public class NthRootNode extends AbstractNode {
 	public void setElements(List<AbstractNode> elements) {
 		this.elements = elements;
 	}
+
 }

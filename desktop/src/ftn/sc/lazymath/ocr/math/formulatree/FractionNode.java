@@ -1,5 +1,6 @@
 package ftn.sc.lazymath.ocr.math.formulatree;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,20 +40,46 @@ public class FractionNode extends AbstractNode {
 	}
 
 	@Override
+	public Point getCenter() {
+		double x = 0;
+		double y = 0;
+
+		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+
+		for (AbstractNode node : this.numerators) {
+			Point center = node.getCenter();
+
+			x += center.getX();
+			y += center.getY();
+		}
+
+		for (AbstractNode node : this.denominators) {
+			Point center = node.getCenter();
+
+			x += center.getX();
+			y += center.getY();
+		}
+
+		return new Point((int) (x / (this.numerators.size() + this.denominators.size() + 1)),
+				(int) (y / (this.numerators.size() + this.denominators.size() + 1)));
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
 		Collections.sort(this.numerators, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-				return (int) (firstNode.minX - secondNode.minX);
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
 
 		Collections.sort(this.denominators, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-				return (int) (firstNode.minX - secondNode.minX);
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
 

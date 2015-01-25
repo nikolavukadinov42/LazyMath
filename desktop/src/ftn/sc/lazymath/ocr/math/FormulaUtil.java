@@ -1,5 +1,6 @@
 package ftn.sc.lazymath.ocr.math;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -16,7 +17,8 @@ import ftn.sc.lazymath.ocr.math.formulatree.NthRootNode;
  */
 public class FormulaUtil {
 
-	public static List<AbstractNode> getNthRootNodes(List<RasterRegion> regions) {
+	public static List<AbstractNode> getNthRootNodes(List<RasterRegion> regions,
+			List<AbstractNode> nodes) {
 		List<AbstractNode> ret = new ArrayList<>();
 
 		// sort by length
@@ -29,60 +31,79 @@ public class FormulaUtil {
 			}
 		});
 
-		List<RasterRegion> ignore = new ArrayList<>();
+		List<RasterRegion> ignoreRegions = new ArrayList<>();
+		// List<AbstractNode> ignoreNodes = new ArrayList<>();
 		for (RasterRegion r1 : regions) {
-			if (!ignore.contains(r1)) {
-				NthRootNode nthRootNode = createNthRootNode(r1, regions);
+			if (!ignoreRegions.contains(r1)) {
+				NthRootNode nthRootNode = createNthRootNode(r1, regions, nodes);
+
 				if (nthRootNode != null) {
-					nthRootNode.minX = r1.minX;
 					ret.add(nthRootNode);
-					ignore.addAll(nthRootNode.getRasterRegions());
+
+					ignoreRegions.addAll(nthRootNode.getRasterRegions());
+					// ignoreNodes.addAll(nthRootNode.getElements());
 				}
 			}
 		}
 
-		regions.removeAll(ignore);
+		regions.removeAll(ignoreRegions);
+		// nodes.removeAll(ignoreNodes);
 
 		return ret;
 	}
 
-	public static NthRootNode createNthRootNode(RasterRegion r1, List<RasterRegion> regions) {
+	public static NthRootNode createNthRootNode(RasterRegion rootRegion,
+			List<RasterRegion> regions, List<AbstractNode> nodes) {
 		NthRootNode ret = null;
 
 		// List<RasterRegion> exponent = new ArrayList<>();
 		RasterRegion exponent = null;
 		List<RasterRegion> elements = new ArrayList<>();
+		List<AbstractNode> nodeElements = new ArrayList<>();
 
 		for (RasterRegion r2 : regions) {
-			if (r2 != r1) {
+			if (r2 != rootRegion) {
 				boolean used = false;
 
 				// check if r2 root exponent for r1
-				double cornerSize = (r1.maxY - r2.minY) / 2;
-				if ((r2.xM > r1.minX) && (r2.xM < (r1.minX + cornerSize)) && (r2.yM > r1.minY)
-						&& (r2.yM < r1.minY + cornerSize)) {
+				double cornerSize = (rootRegion.maxY - r2.minY) / 2;
+				if ((r2.xM > rootRegion.minX) && (r2.xM < (rootRegion.minX + cornerSize))
+						&& (r2.yM > rootRegion.minY) && (r2.yM < rootRegion.minY + cornerSize)) {
 					exponent = r2;
 					used = true;
 				}
 
 				// check if r2 element inside r1
 				if (!used) {
-					if ((r2.xM > r1.minX) && (r2.xM < r1.maxX) && (r2.yM > r1.minY)
-							&& (r2.yM < r1.maxY)) {
+					if ((r2.xM > rootRegion.minX) && (r2.xM < rootRegion.maxX)
+							&& (r2.yM > rootRegion.minY) && (r2.yM < rootRegion.maxY)) {
 						elements.add(r2);
 					}
 				}
 			}
 		}
 
+		for (AbstractNode node : nodes) {
+			Point center = node.getCenter();
+
+			if ((center.getX() > rootRegion.minX) && (center.getX() < rootRegion.maxX)
+					&& (center.getY() > rootRegion.minY) && (center.getY() < rootRegion.maxY)) {
+				nodeElements.add(node);
+			}
+		}
+
+		nodes.removeAll(nodeElements);
+
 		if (!elements.isEmpty()) {
 			ret = new NthRootNode();
-			ret.setRasterRegion(r1);
+			ret.setRasterRegion(rootRegion);
 
 			ret.setExponent(new DefaultNode(exponent));
 
-			ret.addElements(getNthRootNodes(elements));
+			ret.addElements(getNthRootNodes(elements, nodeElements));
 			ret.addElements(getDefaultNodes(elements));
+
+			ret.addElements(nodeElements);
 		}
 
 		return ret;
@@ -93,8 +114,6 @@ public class FormulaUtil {
 
 		for (RasterRegion region : regions) {
 			DefaultNode defaultNode = new DefaultNode(region);
-			defaultNode.minX = region.minX;
-
 			ret.add(defaultNode);
 		}
 		for (AbstractNode abstractNode : ret) {
@@ -210,7 +229,6 @@ public class FormulaUtil {
 				FractionNode fn = createFractionNode(fractionLine, regions);
 				// if the its a fraction line create a fraction
 				if (fn != null) {
-					fn.minX = fractionLine.minX;
 					fn.setFractionLine(fractionLine);
 					ret.add(fn);
 					System.out.println("Successfully created fraction");
@@ -242,13 +260,18 @@ public class FormulaUtil {
 			if (region != fractionLine) {
 				// regions X centre in fraction lines X area
 				if (region.xM > fractionLine.minX && region.xM < fractionLine.maxX) {
-					// region above line
-					if (region.yM < fractionLine.yM) {
-						System.out.println("above: " + region.tag);
-						above.add(region);
-					} else { // region below line
-						System.out.println("below: " + region.tag);
-						below.add(region);
+					// fraction line not inside the region - eg root
+					if (!(fractionLine.xM > region.minX && fractionLine.xM < region.maxX
+							&& fractionLine.yM > region.minY && fractionLine.yM < region.maxY)) {
+						// region above line
+						if (region.yM < fractionLine.yM) {
+							System.out.println("above: " + region.tag);
+							above.add(region);
+						} else { // region below line
+							System.out.println("below: " + region.tag);
+							below.add(region);
+						}
+
 					}
 				}
 			}
@@ -265,8 +288,8 @@ public class FormulaUtil {
 			ret.addNumerators(getFractionNodes(above));
 			ret.addDenominators(getFractionNodes(below));
 
-			ret.addNumerators(getNthRootNodes(above));
-			ret.addDenominators(getNthRootNodes(below));
+			ret.addNumerators(getNthRootNodes(above, ret.getNumerators()));
+			ret.addDenominators(getNthRootNodes(below, ret.getDenominators()));
 
 			ret.addNumerators(getDefaultNodes(above));
 			ret.addDenominators(getDefaultNodes(below));

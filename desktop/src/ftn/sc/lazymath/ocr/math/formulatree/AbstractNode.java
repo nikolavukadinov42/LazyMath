@@ -1,5 +1,6 @@
 package ftn.sc.lazymath.ocr.math.formulatree;
 
+import java.awt.Point;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
@@ -10,9 +11,14 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 public abstract class AbstractNode {
 	protected AbstractNode parent;
 	protected RasterRegion region;
-	public double minX;
 
 	public abstract List<RasterRegion> getRasterRegions();
+
+	public abstract Point getCenter();
+
+	public double getMinX() {
+		return this.region.minX;
+	}
 
 	public RasterRegion getRasterRegion() {
 		return this.region;

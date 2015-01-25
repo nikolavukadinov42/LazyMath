@@ -43,7 +43,7 @@ public class Formula {
 		Collections.sort(this.nodes, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-				return (int) (firstNode.minX - secondNode.minX);
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
 

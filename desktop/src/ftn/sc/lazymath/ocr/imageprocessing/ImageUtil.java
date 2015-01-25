@@ -418,8 +418,6 @@ public class ImageUtil {
 			}
 		}
 
-		double k = 0.5;
-
 		int minVal = Integer.MAX_VALUE;
 		double maxStDev = -1;
 		// hash for maps is y + x * 100
@@ -463,10 +461,12 @@ public class ImageUtil {
 		}
 
 		// apply method to locals
+		double k = 0.5;
 		for (int y = 0; y < d; y++) {
 			for (int x = 0; x < d; x++) {
 				double mean = means.get(y + x * 100);
 				double stDev = stDevs.get(y + x * 100);
+
 				int threshold = (int) ((1 - k) * mean + k * minVal + k * (stDev / maxStDev)
 						* (mean - minVal));
 
@@ -490,10 +490,6 @@ public class ImageUtil {
 		}
 
 		return ret;
-	}
-
-	public static int[][] localChristian(int[][] image) {
-		return null;
 	}
 
 	public static double mean(int[][] image) {
@@ -580,5 +576,228 @@ public class ImageUtil {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static int[][] fengTanMethod(int[][] image) {
+		int h = image.length;
+		int w = image[0].length;
+
+		int d = 6;
+
+		int dH = h / d;
+		int dW = w / d;
+
+		int[][] ret = new int[h][w];
+
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				ret[i][j] = 255;
+			}
+		}
+
+		// hash for maps is y + x * 100
+		Map<Integer, Double> means = new HashMap<Integer, Double>();
+		Map<Integer, Double> stDevs = new HashMap<Integer, Double>();
+		Map<Integer, Integer> minVals = new HashMap<Integer, Integer>();
+		for (int y = 0; y < d; y++) {
+			for (int x = 0; x < d; x++) {
+				int minVal = Integer.MAX_VALUE;
+
+				// calculate local mean
+				double mean = 0;
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						mean += image[y * dH + i][x * dW + j];
+					}
+				}
+
+				mean /= dH * dW;
+				means.put(y + x * 100, mean);
+
+				// calculate local standard deviation
+				double stDev = 0;
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+
+						// check min val
+						int val = image[y * dH + i][x * dW + j];
+						if (val < minVal) {
+							minVal = val;
+						}
+					}
+				}
+
+				stDev /= dH * dW;
+				stDevs.put(y + x * 100, stDev);
+
+				minVals.put(y + x * 100, minVal);
+			}
+		}
+
+		for (int y = 0; y < d; y++) {
+			for (int x = 0; x < d; x++) {
+				boolean yZero = y == 0;
+				boolean yMax = y == (d - 1);
+				boolean xZero = x == 0;
+				boolean xMax = x == (d - 1);
+
+				// calculate larger window mean
+				int count = 0;
+				double lwMean = 0;
+
+				lwMean += means.get(y + x * 100);
+				count++;
+
+				if (!yZero) {
+					// up
+					lwMean += means.get(y - 1 + x * 100);
+					count++;
+
+					// left up
+					if (!xZero) {
+						lwMean += means.get(y - 1 + (x - 1) * 100);
+						count++;
+					}
+
+					// left right
+					if (!xMax) {
+						lwMean += means.get(y - 1 + (x + 1) * 100);
+						count++;
+					}
+				}
+
+				if (!yMax) {
+					// down
+					lwMean += means.get(y + 1 + x * 100);
+					count++;
+
+					// left down
+					if (!xZero) {
+						lwMean += means.get(y + 1 + (x - 1) * 100);
+						count++;
+					}
+
+					// right down
+					if (!xMax) {
+						lwMean += means.get(y + 1 + (x + 1) * 100);
+						count++;
+					}
+				}
+
+				// left
+				if (!xZero) {
+					lwMean += means.get(y + (x - 1) * 100);
+					count++;
+				}
+
+				// right
+				if (!xMax) {
+					lwMean += means.get(y + (x + 1) * 100);
+					count++;
+				}
+
+				lwMean = lwMean / count;
+
+				// calculate larger window standard deviation
+				double lwStDev = 0;
+				count = 0;
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						lwStDev += Math.abs(lwMean - image[y * dH + i][x * dW + j]);
+						count++;
+
+						if (!yZero) {
+							// up
+							lwStDev += Math.abs(lwMean - image[(y - 1) * dH + i][(x) * dW + j]);
+							count++;
+
+							// left up
+							if (!xZero) {
+								lwStDev += Math.abs(lwMean
+										- image[(y - 1) * dH + i][(x - 1) * dW + j]);
+								count++;
+							}
+
+							// left right
+							if (!xMax) {
+								lwStDev += Math.abs(lwMean
+										- image[(y - 1) * dH + i][(x + 1) * dW + j]);
+								count++;
+							}
+						}
+
+						if (!yMax) {
+							// down
+							lwStDev += Math.abs(lwMean - image[(y + 1) * dH + i][(x) * dW + j]);
+							count++;
+
+							// left down
+							if (!xZero) {
+								lwStDev += Math.abs(lwMean
+										- image[(y + 1) * dH + i][(x - 1) * dW + j]);
+								count++;
+							}
+
+							// right down
+							if (!xMax) {
+								lwStDev += Math.abs(lwMean
+										- image[(y + 1) * dH + i][(x + 1) * dW + j]);
+								count++;
+							}
+						}
+
+						// left
+						if (!xZero) {
+							lwStDev += Math.abs(lwMean - image[y * dH + i][(x - 1) * dW + j]);
+							count++;
+						}
+
+						// right
+						if (!xMax) {
+							lwStDev += Math.abs(lwMean - image[y * dH + i][(x + 1) * dW + j]);
+							count++;
+						}
+					}
+				}
+
+				lwStDev = lwStDev / count;
+
+				// apply method to locals
+				double mean = means.get(y + x * 100);
+				double stDev = stDevs.get(y + x * 100);
+				double minVal = minVals.get(y + x * 100);
+
+				double gamma = 2;
+				double alpha1 = 0.12;
+				double k1 = 0.25;
+				double k2 = 0.04;
+
+				double alpha2 = k1 * Math.pow(stDev / lwStDev, gamma);
+				double alpha3 = k2 * Math.pow(stDev / lwStDev, gamma);
+
+				int threshold = (int) ((1 - alpha1) * mean + alpha2 * (stDev / lwStDev)
+						* (mean - minVal) + alpha3 * minVal);
+
+				int[][] tile = new int[dH][dW];
+				int[][] cTile = null;
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						tile[i][j] = image[y * dH + i][x * dW + j];
+					}
+				}
+
+				cTile = matrixToBinary(tile, threshold);
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						ret[y * dH + i][x * dW + j] = cTile[i][j];
+					}
+				}
+			}
+		}
+
+		return ret;
 	}
 }

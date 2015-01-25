@@ -68,7 +68,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		// Create Graphical Interface
 		this.buttonBlackAndWhite = new JButton("Black&White");
 		this.buttonBlackAndWhite.addActionListener(this);
-		this.buttonFindRegions = new JButton("FindRegions");
+		this.buttonFindRegions = new JButton("Process screenshot");
 		this.buttonFindRegions.addActionListener(this);
 		this.buttonFindPows = new JButton("FindPows");
 		this.buttonFindPows.addActionListener(this);
@@ -80,7 +80,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		this.buttonLoadImage.addActionListener(this);
 		this.buttonTrain = new JButton("Train");
 		this.buttonTrain.addActionListener(this);
-		this.buttonProcess = new JButton("Process");
+		this.buttonProcess = new JButton("Process image");
 		this.buttonProcess.addActionListener(this);
 		this.buttonPrepareImage = new JButton("Prepare Image");
 		this.buttonPrepareImage.addActionListener(this);
@@ -162,18 +162,25 @@ public class MainFrame extends JFrame implements ActionListener {
 				this.imagePanel.setImage(file.toString());
 			}
 		} else if (e.getSource() == this.buttonFindRegions) {
+			if (this.ocrMath != null) {
+				int[][] image = ImageUtil.bitmapToMatrix(((BufferedImage) this.imagePanel
+						.getImage()));
+
+				image = ImageUtil.matrixToBinary(image, 200);
+
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(image);
+
+				this.imagePanel.setImage(bitmap);
+
+				this.ocrMath.processImage(image);
+
+				System.out.println(this.ocrMath.recognize());
+			}
 		} else if (e.getSource() == this.buttonTrain) {
 			this.inputRecognize.setText("0123456789abcdxyz+-/*±");
 			this.imagePanel.setImage("./res/ts2.png");
 			List<RasterRegion> regions = OcrUtil.getRegions((BufferedImage) this.imagePanel
 					.getImage());
-
-			int[][] image = ImageUtil.bitmapToMatrix((BufferedImage) this.imagePanel.getImage());
-			image = ImageUtil.matrixToBinary(image, 200);
-			image = ImageUtil.dilation(image);
-
-			this.imagePanel.setImage(ImageUtil.matrixToBitmap(image));
-
 			NeuralNetwork nn = new NeuralNetwork(regions, this.getInputRecognize());
 			this.ocrMath = new OcrMath(nn);
 		} else if (e.getSource() == this.buttonProcess) {

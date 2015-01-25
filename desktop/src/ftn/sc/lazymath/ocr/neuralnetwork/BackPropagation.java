@@ -156,14 +156,16 @@ public class BackPropagation {
 
 		for (int it = 0; it < this.maxIterations; it++) {
 			error = 0;
+
 			for (int sample = 0; sample < this.samplesNum; sample++) {
 				this.setInput(sample);
 				this.calculateOutput();
 				error += 0.5 * this.calculateErrors(sample);
 				this.adjustWeights();
 			}
-			System.out.println("" + it + " " + error);
+
 			this.greske.add(new Point2D.Float(it, (float) error));
+
 			if (error < this.maxError) {
 				break;
 			}

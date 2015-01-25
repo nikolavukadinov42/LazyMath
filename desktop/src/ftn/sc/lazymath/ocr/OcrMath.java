@@ -56,7 +56,7 @@ public class OcrMath extends OcrTemplate {
 
 		List<AbstractNode> nodes = new ArrayList<AbstractNode>();
 		nodes.addAll(FormulaUtil.getFractionNodes(regions));
-		nodes.addAll(FormulaUtil.getNthRootNodes(regions));
+		nodes.addAll(FormulaUtil.getNthRootNodes(regions, nodes));
 		nodes.addAll(FormulaUtil.getDefaultNodes(regions));
 
 		this.formula.addNodes(nodes);

@@ -1,5 +1,6 @@
 package ftn.sc.lazymath.ocr.math.formulatree;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,22 +32,23 @@ public class DefaultNode extends AbstractNode {
 		return ret;
 	}
 
-	public AbstractNode getExponent(RasterRegion region) {
-		for (AbstractNode abstractNode : this.exponent) {
-			if (abstractNode.region == region) {
-				return abstractNode;
-			}
+	@Override
+	public Point getCenter() {
+		double x = 0;
+		double y = 0;
+
+		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+
+		for (AbstractNode node : this.exponent) {
+			Point center = node.getCenter();
+
+			x += center.getX();
+			y += center.getY();
 		}
 
-		return null;
-	}
-
-	public void setExponent(List<AbstractNode> exponent) {
-		this.exponent = exponent;
-	}
-
-	public void removeExponents(List<AbstractNode> exponents) {
-		this.exponent.removeAll(exponents);
+		return new Point((int) (x / (this.exponent.size() + 1)),
+				(int) (y / (this.exponent.size() + 1)));
 	}
 
 	@Override
@@ -64,6 +66,24 @@ public class DefaultNode extends AbstractNode {
 		}
 
 		return sb.toString();
+	}
+
+	public AbstractNode getExponent(RasterRegion region) {
+		for (AbstractNode abstractNode : this.exponent) {
+			if (abstractNode.region == region) {
+				return abstractNode;
+			}
+		}
+
+		return null;
+	}
+
+	public void setExponent(List<AbstractNode> exponent) {
+		this.exponent = exponent;
+	}
+
+	public void removeExponents(List<AbstractNode> exponents) {
+		this.exponent.removeAll(exponents);
 	}
 
 	@Override
