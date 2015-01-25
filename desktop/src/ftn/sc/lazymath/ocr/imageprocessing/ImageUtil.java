@@ -11,7 +11,9 @@ import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -75,45 +77,6 @@ public class ImageUtil {
 		System.arraycopy(data, 0, array, 0, array.length);
 
 		return ret;
-	}
-
-	public static int[][] matrixToOtsuTiles(int[][] image, int R, int C) {
-		int w = image[0].length;
-		int h = image.length;
-
-		int[][] retVal = new int[h][w];
-
-		int dW = w / C;
-		int dH = h / R;
-
-		for (int i = 0; i < dH; i++) {
-			for (int j = 0; j < dW; j++) {
-				retVal[i][j] = 0;
-			}
-		}
-
-		for (int r = 0; r < R - 1; r++) {
-			for (int c = 0; c < C - 1; c++) {
-				int[][] tile = new int[dH][dW];
-				int[][] otsuTile = null;
-
-				for (int i = 0; i < dH; i++) {
-					for (int j = 0; j < dW; j++) {
-						tile[i][j] = image[r * dH + i][c * dW + j];
-					}
-				}
-
-				otsuTile = otsu(tile);
-
-				for (int i = 0; i < dH; i++) {
-					for (int j = 0; j < dW; j++) {
-						retVal[r * dH + i][c * dW + j] = otsuTile[i][j];
-					}
-				}
-			}
-		}
-
-		return retVal;
 	}
 
 	public static int[][] matrixToBinaryTiles(int[][] image, int R, int C) {
@@ -280,7 +243,7 @@ public class ImageUtil {
 
 				}
 
-				retVal[y][x] = count <= 1 ? 255 : 0;
+				retVal[y][x] = count <= 2 ? 255 : 0;
 			}
 		}
 
@@ -436,6 +399,101 @@ public class ImageUtil {
 		}
 
 		return ImageUtil.matrixToBinary(image, (int) ((threshold1 + threshold2) / 2.0));
+	}
+
+	public static int[][] christiansMethod(int[][] image) {
+		int h = image.length;
+		int w = image[0].length;
+
+		int d = 20;
+
+		int dH = h / d;
+		int dW = w / d;
+
+		int[][] ret = new int[h][w];
+
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				ret[i][j] = 255;
+			}
+		}
+
+		double k = 0.5;
+
+		int minVal = Integer.MAX_VALUE;
+		double maxStDev = -1;
+		// hash for maps is y + x * 100
+		Map<Integer, Double> means = new HashMap<Integer, Double>();
+		Map<Integer, Double> stDevs = new HashMap<Integer, Double>();
+		for (int y = 0; y < d; y++) {
+			for (int x = 0; x < d; x++) {
+				// calculate min val
+				int val = image[y][x];
+				if (val < minVal) {
+					minVal = val;
+				}
+
+				// calculate local mean
+				double mean = 0;
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						mean += image[y * dH + i][x * dW + j];
+					}
+				}
+
+				mean /= dH * dW;
+				means.put(y + x * 100, mean);
+
+				// calculate local standard deviation
+				double stDev = 0;
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+					}
+				}
+
+				stDev /= dH * dW;
+				stDevs.put(y + x * 100, stDev);
+
+				// calculate maximum local standard deviation
+				if (stDev > maxStDev) {
+					maxStDev = stDev;
+				}
+			}
+		}
+
+		// apply method to locals
+		for (int y = 0; y < d; y++) {
+			for (int x = 0; x < d; x++) {
+				double mean = means.get(y + x * 100);
+				double stDev = stDevs.get(y + x * 100);
+				int threshold = (int) ((1 - k) * mean + k * minVal + k * (stDev / maxStDev)
+						* (mean - minVal));
+
+				int[][] tile = new int[dH][dW];
+				int[][] cTile = null;
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						tile[i][j] = image[y * dH + i][x * dW + j];
+					}
+				}
+
+				cTile = matrixToBinary(tile, threshold);
+
+				for (int i = 0; i < dH; i++) {
+					for (int j = 0; j < dW; j++) {
+						ret[y * dH + i][x * dW + j] = cTile[i][j];
+					}
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	public static int[][] localChristian(int[][] image) {
+		return null;
 	}
 
 	public static double mean(int[][] image) {
