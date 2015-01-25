@@ -38,7 +38,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	private JButton buttonBlackAndWhite, buttonFindRegions, buttonFindPows, buttonReset;
 	private ImagePanel imagePanel;
 
-	private String imageFileName = "comb.png";
+	
 	private JButton buttonFindFractions;
 	private JButton buttonLoadImage;
 
@@ -55,12 +55,30 @@ public class MainFrame extends JFrame implements ActionListener {
 
 	private OcrMath ocrMath = null;
 
-	public static final String DEFAULT_INPUT = "2*kab-/kx/kxaab*by";
+//	private String imageFileName = "comb.png";
+//	public static final String DEFAULT_INPUT = "2*kab-/kx/kxaab*by";
+	
+//	private String imageFileName = "sqrt.png";
+//	public static final String DEFAULT_INPUT = "k3x+kxx+2";
+//	
+//	private String imageFileName = "fraction.png";
+//	public static final String DEFAULT_INPUT = "//x+/a/ab5b+3";
 
-	// sqrt - k3x+kxx+2
-	// fraction - //x+/a/ab5b+3
-	// combined - 2*kab-/kx/kxaab*by
-
+//	private String imageFileName = "exponents1.png";
+//	public static final String DEFAULT_INPUT = "xx+1+(y*2)4";
+	
+//	private String imageFileName = "exponents.png";
+//	public static final String DEFAULT_INPUT = "ab+1ab+1ab+22+13";
+	
+//	private String imageFileName = "exponents2.png";
+//	public static final String DEFAULT_INPUT = "ab+1ab+1abbb+22x+13+(x+y)2+a";
+	
+//	private String imageFileName = "testt.png";
+//	public static final String DEFAULT_INPUT = "ab+1ab+1abbb+22x+13+(x+y)2+a";
+	
+	private String imageFileName = "complex2.png";
+	public static final String DEFAULT_INPUT = "x+y*/a+k/xaa+2*/xb2b+cv+b*/kak/xyx++*y2y";
+	
 	public MainFrame() {
 
 		super(TITLE);

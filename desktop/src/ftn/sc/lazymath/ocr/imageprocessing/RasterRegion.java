@@ -164,7 +164,7 @@ public class RasterRegion {
 	public double getHeight() {
 		return 0;
 	}
-
+	
 	public static class RegionComparer implements Comparator<RasterRegion> {
 		@Override
 		public int compare(RasterRegion a, RasterRegion b) {
