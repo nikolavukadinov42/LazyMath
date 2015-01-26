@@ -1,0 +1,6 @@
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\classes\debug
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\pre-dexed\debug\support-annotations-21.0.3-2894c07b1c45af28ac21c3ac72233675e5a2c85f.jar
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\pre-dexed\debug\WolframAlpha-1.1-de26f92d6dddc948ada4372c9ec060a55d44509a.jar
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-ecd6f174a00a7da222a65405cfa16d948793a1f6.jar
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\pre-dexed\debug\classes-8284933ac348d6f9c5a5d0f73c4b7656c89fe3d3.jar
+C:\Users\nikola42\Documents\Fakultet\SoftComputing\projekat\LazyMath\app\build\intermediates\pre-dexed\debug\classes-991f70e35307c35ed354ecc58ad91e3d367d6a3b.jar
