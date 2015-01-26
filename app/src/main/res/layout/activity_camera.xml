@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
 
     <FrameLayout
         android:id="@+id/camera_preview"
@@ -11,12 +11,13 @@
 
         <Button
             android:id="@+id/button_capture"
-            android:text="Capture"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_gravity="center_horizontal|bottom" />
+            android:layout_gravity="center_horizontal|bottom"
+            android:background="@drawable/capture_button"
+            android:backgroundTint="#d00"/>
 
         <AbsoluteLayout
             android:id="@+id/camera_window"
@@ -25,35 +26,39 @@
 
             <Button
                 style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:id="@+id/button_se"
-                android:layout_x="250dp"
-                android:layout_y="340dp" />
+                android:layout_x="280dp"
+                android:layout_y="370dp"
+                android:background="#115"/>
 
             <Button
                 style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:id="@+id/button_sw"
                 android:layout_x="75dp"
-                android:layout_y="340dp" />
+                android:layout_y="370dp"
+                android:background="#115"/>
 
             <Button
                 style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:id="@+id/button_nw"
                 android:layout_x="75dp"
-                android:layout_y="80dp" />
+                android:layout_y="80dp"
+                android:background="#115"/>
 
             <Button
                 style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:id="@+id/button_ne"
-                android:layout_x="250dp"
-                android:layout_y="80dp" />
+                android:layout_x="280dp"
+                android:layout_y="80dp"
+                android:background="#115"/>
 
         </AbsoluteLayout>
 

@@ -56,15 +56,9 @@ public class Ocr {
 
         int[][] image = ImageUtil.bitmapToMatrix(rotated);
 
-        int[][] blackAndWhite = ImageUtil.matrixToBinaryTiles(image, 10, 10);
+        image = ImageUtil.christiansMethod(image);
 
-        int[][] erosioned = ImageUtil.erosion(blackAndWhite);
-
-        int[][] dilated = ImageUtil.dilation(erosioned);
-
-        Bitmap processed = ImageUtil.matrixToBitmap(dilated);
-
-        List<RasterRegion> regions = ImageUtil.regionLabeling(dilated);
+        Bitmap processed = ImageUtil.matrixToBitmap(image);
 
         return processed;
     }

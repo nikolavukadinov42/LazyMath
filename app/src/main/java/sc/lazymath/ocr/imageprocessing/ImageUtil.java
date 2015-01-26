@@ -1,46 +1,49 @@
-//
-// Translated by CS2J (http://www.cs2j.com): 12/26/2014 18:22:55
-//
-
 package sc.lazymath.ocr.imageprocessing;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PointF;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+
+import sc.lazymath.ocr.imageprocessing.RasterRegion;
 
 public class ImageUtil {
-    public static int[][] bitmapToMatrix(Bitmap bitmap) {
-        int byteSize = bitmap.getByteCount();
-        ByteBuffer buffer = ByteBuffer.allocate(byteSize);
-        buffer.rewind();
-        bitmap.copyPixelsToBuffer(buffer);
-        buffer.rewind();
-        byte[] data = new byte[byteSize];
-        buffer.get(data);
-        buffer.rewind();
 
-        int pixelSize = 4;
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int rowBytes = bitmap.getRowBytes();
+    private static String toByteString(int color) {
+        // Perform a bitwise AND for convenience while printing.
+        // Otherwise Integer.toHexString() interprets values as integers and a
+        // negative byte 0xFF will be printed as "ffffffff"
+        return Integer.toHexString(color & 0xFF);
+    }
 
-        int[][] ret = new int[height][width];
+    public static int[][] bitmapToMatrix(Bitmap image) {
+        int iw = image.getWidth();
+        int ih = image.getHeight();
+        int[][] ret = new int[ih][iw];
 
-        for (int y = 0; y < height; y++) {
-            byte[] row = Arrays.copyOfRange(data, y * rowBytes, y * rowBytes + rowBytes);
+        // note that image is processed row by row top to bottom
+        for (int y = 0; y < ih; y++) {
+            for (int x = 0; x < iw; x++) {
 
-            for (int x = 0; x < width; x++) {
-                int b = Math.abs((int) (row[x * pixelSize + 0]) & 0xff);// Blue
-                int g = Math.abs((int) (row[x * pixelSize + 1]) & 0xff);// Green
-                int r = Math.abs((int) (row[x * pixelSize + 2]) & 0xff);// Red
+                // returns a packed pixel where each byte is a color channel
+                // order is the default ARGB color model
+                int pixel = image.getPixel(x, y);
 
-                int average = (int) (((double) b + (double) g + (double) r) / 3.0);
+                // Get pixels
+                // int alpha = (pixel >> 24) & 0xFF;
+                int red = (pixel >> 16) & 0xFF;
+                int green = (pixel >> 8) & 0xFF;
+                int blue = pixel & 0xFF;
 
+                int average = (int) (((double) blue + (double) green + red) / 3.0);
                 ret[y][x] = average;
             }
         }
@@ -128,21 +131,39 @@ public class ImageUtil {
 
                 histogram[DD / 2]++;
 
-                //                meanDD += DD;
+                // meanDD += DD;
+                boolean allBlack = false;
+                int count = (int) (dH * dW);
                 for (int y = 0; y < dH; y++) {
                     for (int x = 0; x < dW; x++) {
+
                         if (DD > 20) {
-                            if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT) {//means[r, c]){
+                            if (image[(int) (r * dH) + y][(int) (c * dW) + x] < TT) {// means[r,
+                                // c]){
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+                                count--;
                             } else {
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
                             }
                         } else {
                             if (TT < 80) {
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 0;
+                                count--;
                             } else {
                                 retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
                             }
+                        }
+                    }
+                }
+
+                if (count < 10) {
+                    allBlack = true;
+                }
+
+                if (allBlack) {
+                    for (int y = 0; y < dH; y++) {
+                        for (int x = 0; x < dW; x++) {
+                            retVal[(int) (r * dH) + y][(int) (c * dW) + x] = 255;
                         }
                     }
                 }
@@ -151,7 +172,6 @@ public class ImageUtil {
 
         return retVal;
     }
-
 
     public static int[][] matrixToBinary(int[][] image, int mean) {
         int w = image[0].length;
@@ -202,26 +222,26 @@ public class ImageUtil {
         int w = image[0].length;
         int h = image.length;
         int[][] retVal = new int[h][w];
-        int[] ii = {0, 1, 0, -1, 0};
-        int[] jj = {1, 0, -1, 0, 0};
+        int[] ii = { 0, 1, 0, -1, 0 };
+        int[] jj = { 1, 0, -1, 0, 0 };
         int n = ii.length;
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                int count = n;
+                int count = 0;
 
                 for (int t = 0; t < n; t++) {
                     if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
                         continue;
                     }
 
-                    if (image[y + ii[t]][x + jj[t]] != 0) {
-                        count--;
+                    if (image[y + ii[t]][x + jj[t]] == 0) {
+                        count++;
                     }
 
                 }
 
-                retVal[y][x] = count >= 3 ? 0 : 255;
+                retVal[y][x] = count <= 2 ? 255 : 0;
             }
         }
 
@@ -232,13 +252,13 @@ public class ImageUtil {
         int w = image[0].length;
         int h = image.length;
         int[][] retVal = new int[h][w];
-        int[] ii = {0, 1, 0, -1, 0};
-        int[] jj = {1, 0, -1, 0, 0};
+        int[] ii = { 0, 1, 0, -1, 0 };
+        int[] jj = { 1, 0, -1, 0, 0 };
         int n = ii.length;
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                int count = n;
+                int count = 0;
 
                 for (int t = 0; t < n; t++) {
                     if (y + ii[t] < 0 || y + ii[t] >= h || x + jj[t] < 0 || x + jj[t] >= w) {
@@ -246,13 +266,12 @@ public class ImageUtil {
                     }
 
                     if (image[y + ii[t]][x + jj[t]] == 0) {
-                        count--;
+                        count++;
                     }
 
                 }
 
-
-                retVal[y][x] = count >= 3 ? 255 : 0;
+                retVal[y][x] = count >= 2 ? 0 : 255;
             }
         }
 
@@ -265,8 +284,8 @@ public class ImageUtil {
         int w = image[0].length;
         int h = image.length;
 
-        int[] ii = {0, 1, 0, -1, 0};
-        int[] jj = {1, 0, -1, 0, 0};
+        int[] ii = { 0, 1, 0, -1, 0 };
+        int[] jj = { 1, 0, -1, 0, 0 };
 
         int n = ii.length;
         int regNum = 0;
@@ -372,6 +391,7 @@ public class ImageUtil {
                 if (between > max) {
                     threshold2 = i;
                 }
+
                 max = between;
             }
         }
@@ -379,6 +399,105 @@ public class ImageUtil {
         return ImageUtil.matrixToBinary(image, (int) ((threshold1 + threshold2) / 2.0));
     }
 
+    public static int[][] christiansMethod(int[][] image) {
+        int h = image.length;
+        int w = image[0].length;
+
+        int d = 20;
+
+        int dH = h / d;
+        int dW = w / d;
+
+        int[][] ret = new int[h][w];
+
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                ret[i][j] = 255;
+            }
+        }
+
+        int minVal = Integer.MAX_VALUE;
+        double maxStDev = -1;
+        // hash for maps is y + x * 100
+        Map<Integer, Double> means = new HashMap<Integer, Double>();
+        Map<Integer, Double> stDevs = new HashMap<Integer, Double>();
+        for (int y = 0; y < d + 1; y++) {
+            for (int x = 0; x < d + 1; x++) {
+                // calculate min val
+                // TODO correct?
+                int val = image[y][x];
+                if (val < minVal) {
+                    minVal = val;
+                }
+
+                // calculate local mean
+                double mean = 0;
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        if (y * dH + i < h && x * dW + j < w) {
+                            mean += image[y * dH + i][x * dW + j];
+                        }
+                    }
+                }
+
+                mean /= dH * dW;
+                means.put(y + x * 100, mean);
+
+                // calculate local standard deviation
+                double stDev = 0;
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        if (y * dH + i < h && x * dW + j < w) {
+                            stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+                        }
+                    }
+                }
+
+                stDev /= dH * dW;
+                stDevs.put(y + x * 100, stDev);
+
+                // calculate maximum local standard deviation
+                if (stDev > maxStDev) {
+                    maxStDev = stDev;
+                }
+            }
+        }
+
+        // apply method to locals
+        double k = 0.5;
+        for (int y = 0; y < d + 1; y++) {
+            for (int x = 0; x < d + 1; x++) {
+                double mean = means.get(y + x * 100);
+                double stDev = stDevs.get(y + x * 100);
+
+                int threshold = (int) ((1 - k) * mean + k * minVal + k * (stDev / maxStDev)
+                        * (mean - minVal));
+
+                int[][] tile = new int[dH][dW];
+                int[][] cTile = null;
+
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        if (y * dH + i < h && x * dW + j < w) {
+                            tile[i][j] = image[y * dH + i][x * dW + j];
+                        }
+                    }
+                }
+
+                cTile = matrixToBinary(tile, threshold);
+
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        if (y * dH + i < h && x * dW + j < w) {
+                            ret[y * dH + i][x * dW + j] = cTile[i][j];
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
 
     public static double mean(int[][] image) {
         int w = image[0].length;
@@ -394,25 +513,146 @@ public class ImageUtil {
         return mean / (w * h);
     }
 
-    public static double mean2(int[][] image) {
-        int w = image[0].length;
+    public static int[][] fengTanMethod(int[][] image) {
         int h = image.length;
-        int mean = 0;
-        int count = 0;
+        int w = image[0].length;
 
-        List<Integer> foo = new ArrayList<>();
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                if (!foo.contains(image[y][x])) {
-                    foo.add(image[y][x]);
-                    mean += image[y][x];
-                    count++;
+        int d = 12;
+
+        int dH = h / d;
+        int dW = w / d;
+
+        int[][] ret = new int[h][w];
+
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                ret[i][j] = 255;
+            }
+        }
+
+        // hash for maps is y + x * 100
+        Map<Integer, Double> means = new HashMap<Integer, Double>();
+        Map<Integer, Double> stDevs = new HashMap<Integer, Double>();
+        Map<Integer, Integer> minVals = new HashMap<Integer, Integer>();
+        for (int y = 0; y < d; y++) {
+            for (int x = 0; x < d; x++) {
+                int minVal = Integer.MAX_VALUE;
+
+                // calculate local mean
+                double mean = 0;
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        mean += image[y * dH + i][x * dW + j];
+                    }
+                }
+
+                mean /= dH * dW;
+                means.put(y + x * 100, mean);
+
+                // calculate local standard deviation
+                double stDev = 0;
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+
+                        // check min val
+                        int val = image[y * dH + i][x * dW + j];
+                        if (val < minVal) {
+                            minVal = val;
+                        }
+                    }
+                }
+
+                stDev /= dH * dW;
+                stDevs.put(y + x * 100, stDev);
+
+                minVals.put(y + x * 100, minVal);
+            }
+        }
+
+        for (int y = 0; y < d; y++) {
+            for (int x = 0; x < d; x++) {
+
+                // calculate larger window mean
+                int count = 0;
+                double lwMean = 0;
+
+                lwMean += means.get(y + x * 100);
+                count++;
+
+                for (int i = -2; i <= 2; i++) {
+                    for (int j = -2; j <= 2; j++) {
+                        int yy = y + i;
+                        int xx = x + j;
+
+                        if (yy > 0 && yy < d && xx > 0 && xx < d) {
+                            lwMean += means.get(yy + xx * 100);
+                            count++;
+                        }
+                    }
+                }
+
+                lwMean = lwMean / count;
+
+                // calculate larger window standard deviation
+                double lwStDev = 0;
+                count = 0;
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        lwStDev += Math.abs(lwMean - image[y * dH + i][x * dW + j]);
+                        count++;
+
+                        for (int ii = -1; ii <= 1; ii++) {
+                            for (int jj = -1; jj <= 1; jj++) {
+                                int yy = y + ii;
+                                int xx = x + jj;
+
+                                if (yy > 0 && yy < d && xx > 0 && xx < d) {
+                                    lwMean += means.get(yy + xx * 100);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                lwStDev = lwStDev / count;
+
+                // apply method to locals
+                double mean = means.get(y + x * 100);
+                double stDev = stDevs.get(y + x * 100);
+                double minVal = minVals.get(y + x * 100);
+
+                double gamma = 2;
+                double alpha1 = 0.12;
+                double k1 = 0.25;
+                double k2 = 0.04;
+
+                double alpha2 = k1 * Math.pow(stDev / lwStDev, gamma);
+                double alpha3 = k2 * Math.pow(stDev / lwStDev, gamma);
+
+                int threshold = (int) ((1 - alpha1) * mean + alpha2 * (stDev / lwStDev)
+                        * (mean - minVal) + alpha3 * minVal);
+
+                int[][] tile = new int[dH][dW];
+                int[][] cTile = null;
+
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        tile[i][j] = image[y * dH + i][x * dW + j];
+                    }
+                }
+
+                cTile = matrixToBinary(tile, threshold);
+
+                for (int i = 0; i < dH; i++) {
+                    for (int j = 0; j < dW; j++) {
+                        ret[y * dH + i][x * dW + j] = cTile[i][j];
+                    }
                 }
             }
         }
 
-        return mean / count;
+        return ret;
     }
 }
-
-

@@ -8,13 +8,19 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import java.util.List;
+
 import sc.lazymath.R;
 import sc.lazymath.ocr.Ocr;
 import sc.lazymath.util.CameraUtil;
+import sc.lazymath.views.CameraOverlay;
 import sc.lazymath.views.CameraView;
 
 public class CameraActivity extends ActionBarActivity {
@@ -34,11 +40,16 @@ public class CameraActivity extends ActionBarActivity {
         camera = CameraUtil.getCameraInstance(getApplicationContext());
 
         CameraUtil.initCamera(camera);
-        CameraUtil.initRectangleButtons(this);
 
         cameraView = new CameraView(this, camera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(this.cameraView, 0);
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams
+                .FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT);
+
+        final CameraOverlay overlay = new CameraOverlay(this.getApplicationContext());
+        preview.addView(overlay, 1, params);
 
         Button captureButton = (Button) findViewById(R.id.button_capture);
         captureButton.setOnClickListener(new View.OnClickListener() {
@@ -47,8 +58,21 @@ public class CameraActivity extends ActionBarActivity {
                 camera.autoFocus(autoFocusCallback);
             }
         });
-    }
 
+        final AbsoluteLayout window = (AbsoluteLayout) this.findViewById(R.id.camera_window);
+        ViewTreeObserver vto = window.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                ViewTreeObserver obs = window.getViewTreeObserver();
+                obs.removeGlobalOnLayoutListener(this);
+
+                List<Button> buttons = CameraUtil.initRectangleButtons(CameraActivity.this, overlay);
+                overlay.setButtons(buttons);
+                overlay.invalidate();
+            }
+        });
+    }
 
 
     @Override

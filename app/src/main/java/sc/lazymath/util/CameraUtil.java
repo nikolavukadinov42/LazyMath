@@ -4,14 +4,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import sc.lazymath.R;
 import sc.lazymath.activities.HomeActivity;
+import sc.lazymath.views.CameraOverlay;
 
 /**
  * Created by nikola42 on 12/27/2014.
@@ -19,8 +24,11 @@ import sc.lazymath.activities.HomeActivity;
 public class CameraUtil {
 
     //    private static Point size;
-    private static final float marginX = 100;
-    private static final float marginY = 200;
+    private static final float MARGIN_X = 100;
+    private static final float MARGIN_Y = 200;
+
+    // TODO move somewhere
+    private static CameraOverlay overlay;
 
     public static void initCamera(Camera camera) {
         Camera.Parameters params = camera.getParameters();
@@ -29,7 +37,9 @@ public class CameraUtil {
         params.setRotation(90);
 
         // set focus mode to auto
-        if (params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+        if (params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+        } else {
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         }
 
@@ -63,8 +73,6 @@ public class CameraUtil {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             }
         }
-
-        camera.setParameters(params);
     }
 
     public static Camera getCameraInstance(Context context) {
@@ -118,21 +126,53 @@ public class CameraUtil {
         return cam;
     }
 
-    public static void initRectangleButtons(final Activity activity) {
+    public static List<Button> initRectangleButtons(final Activity activity,
+                                                    CameraOverlay overlayy) {
+        List<Button> ret = new ArrayList<>();
+
         Button seButton = (Button) activity.findViewById(R.id.button_se);
         Button swButton = (Button) activity.findViewById(R.id.button_sw);
         Button neButton = (Button) activity.findViewById(R.id.button_ne);
         Button nwButton = (Button) activity.findViewById(R.id.button_nw);
 
-        // get screen size
-        //        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
-        //        screenSize = new PointF(preview.getWidth(), preview.getHeight());
+        AbsoluteLayout window = (AbsoluteLayout) activity.findViewById(R.id.camera_window);
+
+        DisplayMetrics displayMetrics = activity.getApplicationContext().getResources()
+                .getDisplayMetrics();
+
+        int h = window.getHeight() - 80;
+        int w = window.getWidth();
+
+        int width = seButton.getWidth();
+        int height = seButton.getHeight();
+
+        seButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.75 - width / 2),
+                (int) (h * 0.75 - height / 2)));
+
+        swButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.25 - width / 2),
+                (int) (h * 0.75 - height / 2)));
+
+        neButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.75 - width / 2),
+                (int) (h * 0.25 - height / 2)));
+
+        nwButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.25 - width / 2),
+                (int) (h * 0.25 - height / 2)));
+
+        ret.add(seButton);
+        ret.add(swButton);
+        ret.add(neButton);
+        ret.add(nwButton);
+
+        overlay = overlayy;
 
         View.OnTouchListener myOnTouchListener = new View.OnTouchListener() {
             public boolean onTouch(View view, MotionEvent e) {
                 if (e.getAction() == MotionEvent.ACTION_MOVE) {
                     moveRectangleButton(activity, (Button) view, e);
                 }
+
+                overlay.invalidate();
+
                 return true;
             }
         };
@@ -141,6 +181,8 @@ public class CameraUtil {
         swButton.setOnTouchListener(myOnTouchListener);
         neButton.setOnTouchListener(myOnTouchListener);
         nwButton.setOnTouchListener(myOnTouchListener);
+
+        return ret;
     }
 
     public static void moveRectangleButton(Activity activity, Button button, MotionEvent e) {
@@ -159,7 +201,7 @@ public class CameraUtil {
                 Button neButton = (Button) activity.findViewById(R.id.button_ne);
                 Button swButton = (Button) activity.findViewById(R.id.button_sw);
 
-                if (((x - swButton.getX()) < marginX)
+                if (((x - swButton.getX()) < MARGIN_X)
                     //|| (x > (size.x - (width / 2)))
                         ) {
                     flagX = true;
@@ -170,7 +212,7 @@ public class CameraUtil {
                     neButton.setLayoutParams(params);
                 }
 
-                if (((y - neButton.getY()) < marginY)
+                if (((y - neButton.getY()) < MARGIN_Y)
                     //|| (y > (size.y - (height / 2)))
                         ) {
                     flagY = true;
@@ -186,7 +228,7 @@ public class CameraUtil {
                 Button nwButton = (Button) activity.findViewById(R.id.button_nw);
                 Button seButton = (Button) activity.findViewById(R.id.button_se);
 
-                if (((seButton.getX() - x) < marginX)
+                if (((seButton.getX() - x) < MARGIN_X)
                     //|| (x < (width / 2))
                         ) {
                     flagX = true;
@@ -197,7 +239,7 @@ public class CameraUtil {
                     nwButton.setLayoutParams(params);
                 }
 
-                if (((y - nwButton.getY()) < marginY)
+                if (((y - nwButton.getY()) < MARGIN_Y)
                     //|| (y > (size.y - (height / 2)))
                         ) {
                     flagY = true;
@@ -213,7 +255,7 @@ public class CameraUtil {
                 Button seButton = (Button) activity.findViewById(R.id.button_se);
                 Button nwButton = (Button) activity.findViewById(R.id.button_nw);
 
-                if (((x - nwButton.getX()) < marginX)
+                if (((x - nwButton.getX()) < MARGIN_X)
                     //|| (x > (size.x - (width / 2)))
                         ) {
                     flagX = true;
@@ -224,7 +266,7 @@ public class CameraUtil {
                     seButton.setLayoutParams(params);
                 }
 
-                if (((seButton.getY() - y) < marginY)
+                if (((seButton.getY() - y) < MARGIN_Y)
                     //|| (y < (height / 2))
                         ) {
                     flagY = true;
@@ -240,7 +282,7 @@ public class CameraUtil {
                 Button swButton = (Button) activity.findViewById(R.id.button_sw);
                 Button neButton = (Button) activity.findViewById(R.id.button_ne);
 
-                if (((neButton.getX() - x) < marginX)
+                if (((neButton.getX() - x) < MARGIN_X)
                     //|| (x < (width / 2))
                         ) {
                     flagX = true;
@@ -251,7 +293,7 @@ public class CameraUtil {
                     swButton.setLayoutParams(params);
                 }
 
-                if (((swButton.getY() - y) < marginY)
+                if (((swButton.getY() - y) < MARGIN_Y)
                     //|| (y < (height / 2))
                         ) {
                     flagY = true;
