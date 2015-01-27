@@ -33,6 +33,7 @@ import java.util.Map;
 
 import sc.lazymath.R;
 import sc.lazymath.entities.WolframAlphaPod;
+import sc.lazymath.util.ImageDownloader;
 
 /**
  * Class
@@ -48,10 +49,11 @@ public class SolutionActivity extends ActionBarActivity {
     private AlertDialog.Builder alerDialogBuilder;
 
     private WAQuery wolframAlphaQuery;
+    private WAQuery wolframAlphaRootQuery;
     private WAEngine wolframAlphaEngine;
     private List<String> podTitles;
     private Map<String, List<WolframAlphaPod>> podContent;
-    private String[] excludeFromWolframAlpha = new String[]{"input", "alternate form"};
+    private String[] excludeFromWolframAlpha = new String[]{"Input interpretation", "Root plot", "Number line"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +86,7 @@ public class SolutionActivity extends ActionBarActivity {
         wolframAlphaEngine.addFormat("image");
 
         wolframAlphaQuery = wolframAlphaEngine.createQuery();
-
+        wolframAlphaRootQuery = wolframAlphaEngine.createQuery();
     }
 
     @Override
@@ -127,8 +129,10 @@ public class SolutionActivity extends ActionBarActivity {
         }
 
         WolframAlphaTask wa = new WolframAlphaTask();
-        wolframAlphaQuery.setInput(input);
-        wa.execute(wolframAlphaQuery);
+        wolframAlphaQuery.setInput("roots " + input);
+        wolframAlphaRootQuery.setInput(input);
+
+        wa.execute(wolframAlphaQuery, wolframAlphaRootQuery);
     }
 
     /**
@@ -137,17 +141,23 @@ public class SolutionActivity extends ActionBarActivity {
     private class WolframAlphaTask extends AsyncTask<WAQuery, Void, Boolean> {
 
         public WolframAlphaTask() {
-            progressDialog.setTitle("Loading");
+            progressDialog.setTitle("Doing math!");
             progressDialog.setMessage("Wait...");
             progressDialog.show();
         }
 
         @Override
         protected Boolean doInBackground(WAQuery... queries) {
-            boolean result = false;
+            boolean result = true;
+
+            podTitles.clear();
+            podContent.clear();
+
             try {
-                WAQueryResult queryResult = wolframAlphaEngine.performQuery(queries[0]);
-                result = parse(queryResult);
+                for(WAQuery query : queries){
+                    WAQueryResult queryResult = wolframAlphaEngine.performQuery(query);
+                    result &= parse(queryResult);
+                }
             } catch (WAException e) {
                 e.printStackTrace();
             }
@@ -161,62 +171,73 @@ public class SolutionActivity extends ActionBarActivity {
          * @return
          */
         private boolean parse(WAQueryResult queryResult) {
-            podTitles.clear();
-            podContent.clear();
+            boolean ret;
+
             if (queryResult.isError()) {
                 AlertDialog dialog = alerDialogBuilder.setTitle("Query error")
                         .setMessage("error message: " + queryResult.getErrorMessage())
                         .create();
                 dialog.show();
-                return false;
+
+                ret = false;
             } else if (!queryResult.isSuccess()) {
                 AlertDialog dialog = alerDialogBuilder.setTitle("Query error")
                         .setMessage("Query was not understood; no results available.")
                         .create();
                 dialog.show();
-                return false;
+
+                ret = false;
             } else {
+                ret = true;
+
                 for (WAPod waPod : queryResult.getPods()) {
                     if (!waPod.isError()) {
                         String title = waPod.getTitle();
-                        if (contains(title, excludeFromWolframAlpha)) {
-                            continue;
-                        }
-                        List<WolframAlphaPod> children = new ArrayList<>();
-                        String text = null;
-                        String imageUrl = null;
-                        Bitmap bitmap = null;
-                        for (WASubpod subPod : waPod.getSubpods()) {
-                            for (Object element : subPod.getContents()) {
-                                if (element instanceof WAPlainText) {
-                                    text = ((WAPlainText) element).getText();
-                                } else if (element instanceof WAImage) {
-                                    imageUrl = ((WAImage) element).getURL();
+
+                        if (!contains(title, excludeFromWolframAlpha)) {
+                            List<WolframAlphaPod> children = new ArrayList<>();
+                            String text = null;
+                            String imageUrl = null;
+                            Bitmap bitmap = null;
+
+                            for (WASubpod subPod : waPod.getSubpods()) {
+                                for (Object element : subPod.getContents()) {
+                                    if (element instanceof WAPlainText) {
+                                        text = ((WAPlainText) element).getText();
+                                    } else if (element instanceof WAImage) {
+                                        imageUrl = ((WAImage) element).getURL();
+                                    }
                                 }
+
+                                if (hasText(imageUrl) || hasText(text)) {
+                                    WolframAlphaPod wolframAlphaPod = new WolframAlphaPod(text, bitmap);
+
+                                    children.add(wolframAlphaPod);
+
+                                    Log.d(HomeActivity.TAG, text);
+                                    Log.d(HomeActivity.TAG, imageUrl);
+
+                                    if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                                        ImageDownloader imgDownloader = new ImageDownloader
+                                                (wolframAlphaPod);
+                                        imgDownloader.execute(imageUrl);
+                                    }
+                                }
+
+                                imageUrl = null;
+                                text = null;
                             }
 
-                            if (hasText(imageUrl) || hasText(text)) {
-                                WolframAlphaPod wolframAlphaPod = new WolframAlphaPod(text, bitmap);
-                                children.add(wolframAlphaPod);
-                                Log.d(HomeActivity.TAG, text);
-                                Log.d(HomeActivity.TAG, imageUrl);
-                                if (text == null || text.trim().isEmpty()) {
-                                    ImageDownloader imgDownloader = new ImageDownloader(wolframAlphaPod);
-                                    imgDownloader.execute(imageUrl);
-                                }
+                            if (children.size() > 0) {
+                                podTitles.add(waPod.getTitle());
+                                podContent.put(waPod.getTitle(), children);
                             }
-                            imageUrl = null;
-                            text = null;
-                        }
-
-                        if (children.size() > 0) {
-                            podTitles.add(waPod.getTitle());
-                            podContent.put(waPod.getTitle(), children);
                         }
                     }
                 }
             }
-            return true;
+
+            return ret;
         }
 
         @Override
@@ -254,29 +275,3 @@ public class SolutionActivity extends ActionBarActivity {
 
 }
 
-/**
- * Class is creating bitmap image from given url using {@link android.os.AsyncTask}
- */
-class ImageDownloader extends AsyncTask<String, Void, Bitmap> {
-    WolframAlphaPod wolframAlphaPod;
-
-    public ImageDownloader(WolframAlphaPod wolframAlphaPod) {
-        this.wolframAlphaPod = wolframAlphaPod;
-    }
-
-    protected Bitmap doInBackground(String... urls) {
-        String url = urls[0];
-        Bitmap mIcon = null;
-        try {
-            InputStream in = new java.net.URL(url).openStream();
-            mIcon = BitmapFactory.decodeStream(in);
-        } catch (Exception e) {
-            Log.e("Error", e.getMessage());
-        }
-        return mIcon;
-    }
-
-    protected void onPostExecute(Bitmap result) {
-        wolframAlphaPod.setImage(result);
-    }
-}
