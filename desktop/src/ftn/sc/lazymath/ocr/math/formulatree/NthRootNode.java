@@ -117,8 +117,18 @@ public class NthRootNode extends AbstractNode {
 		this.elements = elements;
 	}
 	
+	public double getMinY() {
+		return region.minY;
+	}
+
+	@Override
+	public double getMaxY() {
+		return region.maxY;
+	}
+
 	@Override
 	public Point getCenterWithoutExponents() {
 		return getCenter();
 	}
+
 }

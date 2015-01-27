@@ -19,7 +19,6 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import ftn.sc.lazymath.ocr.OcrMath;
-import ftn.sc.lazymath.ocr.OcrUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 
 public class ImagePanel extends JPanel implements MouseListener, MouseMotionListener {
@@ -34,17 +33,17 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 	public ImagePanel(MainFrame mainFrame) {
 		super(new GridLayout(4, 4, 20, 20));
 		this.mainFrame = mainFrame;
-		imagePath = "./res/" + mainFrame.getImageFileName();
-		setImage(imagePath);
-		ImageFrame = new Rectangle(0, 0, image.getWidth(null), image.getHeight(null));
-		translate = new Point();
+		this.imagePath = "./res/" + mainFrame.getImageFileName();
+		this.setImage(this.imagePath);
+		this.ImageFrame = new Rectangle(0, 0, this.image.getWidth(null), this.image.getHeight(null));
+		this.translate = new Point();
 
-		addMouseMotionListener(this);
-		addMouseListener(this);
+		this.addMouseMotionListener(this);
+		this.addMouseListener(this);
 
-		setPreferredSize(preferredSize);
-		setBackground(Color.cyan);
-		setVisible(true);
+		this.setPreferredSize(this.preferredSize);
+		this.setBackground(Color.cyan);
+		this.setVisible(true);
 	}
 
 	public void setImage(String imagePath) {
@@ -52,43 +51,46 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 		this.imagePath = imagePath;
 		try {
 			BufferedImage img = ImageIO.read(new File(imagePath));
-			image = img;
-			repaint();
+			System.out.println(img.getHeight() + ", " + img.getWidth());
+			this.image = img;
+			this.repaint();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void setImage(BufferedImage img) {
-		image = img;
-		repaint();
+		this.image = img;
+		this.repaint();
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g.create();
-		g2.translate(getWidth()/2 - image.getWidth(null)/2 + translate.x, getHeight()/2 - image.getHeight(null)/2 + translate.y);
+		g2.translate(this.getWidth() / 2 - this.image.getWidth(null) / 2 + this.translate.x,
+				this.getHeight() / 2 - this.image.getHeight(null) / 2 + this.translate.y);
 		// g2.scale(3,3);
-		drawImage(g2);
-		drawRegionsFrame(g2);
+		this.drawImage(g2);
+		this.drawRegionsFrame(g2);
 		// x(x+1)+(y*2)4
 		g2.dispose();
 	}
 
 	public void drawRegionsFrame(Graphics2D g2) {
 		g2.setColor(Color.red);
-		if (mainFrame.getOcr() != null && mainFrame.getOcr().getBackupRegions() != null) {
-			int regionsSize = mainFrame.getOcr().getBackupRegions().size();
-			OcrMath ocr = (OcrMath) mainFrame.getOcr();
+		if (this.mainFrame.getOcr() != null && this.mainFrame.getOcr().getBackupRegions() != null) {
+			int regionsSize = this.mainFrame.getOcr().getBackupRegions().size();
+			OcrMath ocr = (OcrMath) this.mainFrame.getOcr();
 			int stringLen = ocr.getInputString().length();
 			// System.out.println(regionsSize);
-			if (mainFrame.getOcr().getBackupRegions().size() > 0) {
+			if (this.mainFrame.getOcr().getBackupRegions().size() > 0) {
 				int i = 0;
-				for (RasterRegion r : mainFrame.getOcr().getBackupRegions()) {
+				for (RasterRegion r : this.mainFrame.getOcr().getBackupRegions()) {
 					g2.drawRect(r.minX - 1, r.minY - 1, r.maxX - r.minX + 2, r.maxY - r.minY + 2);
 					if (regionsSize == stringLen) {
-						g2.drawString(String.valueOf(ocr.getInputString().charAt(i)), r.minX - 1, r.minY - 1);
+						g2.drawString(String.valueOf(ocr.getInputString().charAt(i)), r.minX - 1,
+								r.minY - 1);
 					}
 					i++;
 				}
@@ -97,14 +99,15 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 	}
 
 	private void drawImage(Graphics2D g2) {
-		if (image != null) {
-			g2.drawImage(image, 0,0, image.getWidth(null), image.getHeight(null), null);
+		if (this.image != null) {
+			g2.drawImage(this.image, 0, 0, this.image.getWidth(null), this.image.getHeight(null),
+					null);
 		}
 	}
 
 	@Override
 	public Dimension getPreferredSize() {
-		return preferredSize;
+		return this.preferredSize;
 	}
 
 	@Override
@@ -117,16 +120,17 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		if (translate.x < e.getPoint().x && translate.y < e.getPoint().y && translate.x + image.getWidth(null) > e.getPoint().x
-				&& translate.y + image.getHeight(null) > e.getPoint().y) {
-//			pressed = true;
+		if (this.translate.x < e.getPoint().x && this.translate.y < e.getPoint().y
+				&& this.translate.x + this.image.getWidth(null) > e.getPoint().x
+				&& this.translate.y + this.image.getHeight(null) > e.getPoint().y) {
+			// pressed = true;
 		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		// TODO Auto-generated method stub
-		pressed = false;
+		this.pressed = false;
 	}
 
 	@Override
@@ -143,9 +147,9 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (pressed) {
-			translate.setLocation(e.getPoint().x, e.getPoint().y);
-			repaint();
+		if (this.pressed) {
+			this.translate.setLocation(e.getPoint().x, e.getPoint().y);
+			this.repaint();
 		}
 	}
 
@@ -156,7 +160,7 @@ public class ImagePanel extends JPanel implements MouseListener, MouseMotionList
 	}
 
 	public Image getImage() {
-		return image;
+		return this.image;
 	}
 
 	public void setImage(Image image) {

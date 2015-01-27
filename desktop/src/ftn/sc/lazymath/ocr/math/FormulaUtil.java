@@ -17,8 +17,9 @@ import ftn.sc.lazymath.ocr.math.formulatree.NthRootNode;
  */
 public class FormulaUtil {
 
-	public static List<AbstractNode> getNthRootNodes(List<RasterRegion> regions,
-			List<AbstractNode> nodes) {
+	private static List<AbstractNode> processed = new ArrayList<AbstractNode>();
+
+	public static List<AbstractNode> getNthRootNodes(List<RasterRegion> regions, List<AbstractNode> nodes) {
 		List<AbstractNode> ret = new ArrayList<>();
 
 		// sort by length
@@ -56,10 +57,22 @@ public class FormulaUtil {
 			List<RasterRegion> regions, List<AbstractNode> nodes) {
 		NthRootNode ret = null;
 
-		// List<RasterRegion> exponent = new ArrayList<>();
 		RasterRegion exponent = null;
 		List<RasterRegion> elements = new ArrayList<>();
 		List<AbstractNode> nodeElements = new ArrayList<>();
+
+		List<AbstractNode> nodesToRemove = new ArrayList<AbstractNode>();
+
+		for (AbstractNode node : nodes) {
+			Point center = node.getCenter();
+
+			if ((center.getX() > rootRegion.minX) && (center.getX() < rootRegion.maxX) && (center.getY() > rootRegion.minY)
+					&& (center.getY() < rootRegion.maxY)) {
+				nodeElements.add(node);
+				nodesToRemove.add(node);
+			}
+		}
+		nodes.removeAll(nodesToRemove);
 
 		for (RasterRegion r2 : regions) {
 			if (r2 != rootRegion) {
@@ -94,7 +107,7 @@ public class FormulaUtil {
 
 		nodes.removeAll(nodeElements);
 
-		if (!elements.isEmpty()) {
+		if (!elements.isEmpty() || !nodeElements.isEmpty()) {
 			ret = new NthRootNode();
 			ret.setRasterRegion(rootRegion);
 
@@ -123,6 +136,21 @@ public class FormulaUtil {
 		return ret;
 	}
 
+	public static boolean isUpperRight(DefaultNode base, AbstractNode upperRight) {
+		double tolerance = (base.getMaxY() - base.getMinY()) / 10;
+		return base.getCenterWithoutExponents().y > upperRight.getCenter().y
+				&& base.getMinY() > upperRight.getMinY() - tolerance
+				&& upperRight.getMinX() - base.getCenterWithoutExponents().x > 0
+				&& base.getMaxX() < upperRight.getMaxX()
+				&& (base.getMaxY() > upperRight.getMaxY())
+				&& (base.getCenterWithoutExponents().y + tolerance > upperRight.getMaxY() || !(upperRight instanceof DefaultNode));
+	}
+	
+	private static boolean isDownRight(DefaultNode base, DefaultNode down) {
+		return base.getMaxY() < down.getMaxY() && base.getMinY() < down.getMinY() && down.getMinX() - base.getMaxX() > -5
+				&& down.getMinY() - base.getMinY() > ((base.getMaxY() - base.getMinY()) / 4);
+	}
+
 	/**
 	 * 1. Find region with exponents in given regions 2. Get all exponents of
 	 * region 3. if parent is not null remove all exponents from parent 4.
@@ -132,62 +160,63 @@ public class FormulaUtil {
 	 * -> x^(2+y^(a^b)) // third
 	 *
 	 * @param regions
-	 * @param ret
+	 * @param nodes
 	 * @param parent
 	 */
-	public static List<AbstractNode> getExponents(List<RasterRegion> regions,
-			List<AbstractNode> ret, DefaultNode parent) {
-		// List<RasterRegion> exponents = new ArrayList<RasterRegion>();
-		// List<AbstractNode> exponentsAbstract = new ArrayList<AbstractNode>();
-		// for (int i = 0; i < regions.size(); i++) {
-		// for (int j = i + 1; j < regions.size(); j++) {
-		// if (isUpperRight(regions.get(i), regions.get(j))) {
-		// exponents.add(regions.get(j));
-		// System.out.print("\n" + regions.get(j).tag + " is above " +
-		// regions.get(i).tag);
-		//
-		// // exponentsAbstract.addAll(getFractionNodes(regions));
-		// // exponentsAbstract.addAll(getNthRootNodes(regions));
-		// DefaultNode dn = new DefaultNode(regions.get(j));
-		// exponentsAbstract.add(dn);
-		// // System.out.println("\tcreated default node from: " +
-		// // dn.getRasterRegion().tag);
-		// } else {
-		// break;
-		// }
-		// }
-		//
-		// if (exponents.size() > 0) {
-		// AbstractNode next = null;
-		// if (parent == null) {
-		// parent = new DefaultNode(regions.get(i));
-		// parent.setExponent(new ArrayList<AbstractNode>(exponentsAbstract));
-		// OcrMath.formula.addNode(parent);
-		// ret.add(parent);
-		// next = parent;
-		// } else {
-		// parent.removeExponents(exponentsAbstract);
-		// AbstractNode child = parent.getExponent(regions.get(i));
-		// child.setExponent(new ArrayList<AbstractNode>(exponentsAbstract));
-		// next = child;
-		// }
-		// // DefaultNode child = new DefaultNode(regions.get(i));
-		//
-		// System.out.println("----------------------");
-		// System.out.println();
-		// regions.removeAll(exponents);
-		// getExponents(exponents, ret, next);
-		// parent = null;
-		// }
-		// exponents.clear();
-		// exponentsAbstract.clear();
-		// }
-		return ret;
+	public static List<AbstractNode> getExponents(List<AbstractNode> nodes, DefaultNode parent, List<AbstractNode> processed) {
+		System.out.println();
+		System.out.println();
+
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i) instanceof DefaultNode && !processed.contains(nodes.get(i))) {
+				DefaultNode defaultNode = (DefaultNode) nodes.get(i);
+				processDefaultNodes(defaultNode, i, nodes, parent);
+			} else if (nodes.get(i) instanceof FractionNode && !processed.contains(nodes.get(i))) {
+				System.out.println("fraction");
+				FractionNode fraction = (FractionNode) nodes.get(i);
+
+				for (AbstractNode abstractNode : fraction.getDenominators()) {
+					System.out.println(abstractNode);
+				}
+				getExponents(fraction.getNumerators(), null, FormulaUtil.processed);
+				getExponents(fraction.getDenominators(), null, FormulaUtil.processed);
+			} else if (nodes.get(i) instanceof NthRootNode && !processed.contains(nodes.get(i))) {
+				System.out.println("nth");
+				NthRootNode nthRoot = (NthRootNode) nodes.get(i);
+				getExponents(nthRoot.getElements(), null, FormulaUtil.processed);
+			}
+		}
+		nodes.removeAll(toRemoveExp);
+		return nodes;
 	}
 
-	private static boolean isUpperRight(RasterRegion r1, RasterRegion r2) {
-		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX
-				&& r1.yM > r2.maxY;
+	static List<AbstractNode> toRemoveExp = new ArrayList<AbstractNode>();
+
+	public static void processDefaultNodes(DefaultNode base, int index, List<AbstractNode> nodes, DefaultNode parent) {
+		List<AbstractNode> toProcess = new ArrayList<AbstractNode>();
+		for (int j = index + 1; j < nodes.size(); j++) {
+			if (nodes.get(j) instanceof DefaultNode && isDownRight(base, (DefaultNode) nodes.get(j))) {
+				System.out.println(base.getRasterRegion().tag + " down " + nodes.get(j).getRasterRegion().tag);
+				base.addIndex((DefaultNode) nodes.get(j));
+				toProcess.add(nodes.get(j));
+				toRemoveExp.add(nodes.get(j));
+				break;
+			} else if (isUpperRight((DefaultNode) base, nodes.get(j))) {
+				toProcess.add(nodes.get(j));
+				base.addExponent(nodes.get(j));
+				toRemoveExp.add(nodes.get(j));
+			} else {
+				break;
+			}
+		}
+		if (toProcess.size() > 0) {
+			if (parent != null) {
+				parent.removeExponents(toProcess);
+			}
+			processed.add(base);
+			nodes.removeAll(toProcess);
+			getExponents(toProcess, (DefaultNode) base, processed);
+		}
 	}
 
 	public static List<AbstractNode> getFractionNodes(List<RasterRegion> regions) {
@@ -220,8 +249,7 @@ public class FormulaUtil {
 			}
 		});
 
-		System.out.println("getFractionNodes fraction lines num "
-				+ String.valueOf(fractionsLines.size()));
+		System.out.println("getFractionNodes fraction lines num " + String.valueOf(fractionsLines.size()));
 		List<RasterRegion> ignore = new ArrayList<>();
 		for (RasterRegion fractionLine : fractionsLines) {
 			// check if the fraction line is not already in some other fraction

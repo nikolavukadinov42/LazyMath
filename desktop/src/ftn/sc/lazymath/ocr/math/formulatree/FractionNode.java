@@ -39,6 +39,20 @@ public class FractionNode extends AbstractNode {
 		return ret;
 	}
 
+	public List<DefaultNode> getDefaultNodes() {
+		List<DefaultNode> defaultNodes = new ArrayList<DefaultNode>();
+
+		for (AbstractNode node : numerators) {
+			defaultNodes.addAll(node.getDefaultNodes());
+		}
+		
+		for (AbstractNode node : denominators) {
+			defaultNodes.addAll(node.getDefaultNodes());
+		}
+
+		return defaultNodes;
+	}
+
 	@Override
 	public Point getCenter() {
 		double x = 0;
@@ -103,8 +117,8 @@ public class FractionNode extends AbstractNode {
 	public boolean isInside(RasterRegion root) {
 		System.out.println("ROOT: " + root.tag);
 		System.out.println("FL: " + this.fractionLine.tag);
-		if ((this.fractionLine.xM > root.minX) && (this.fractionLine.xM < root.maxX)
-				&& (this.fractionLine.yM > root.minY) && (this.fractionLine.yM < root.maxY)) {
+		if ((this.fractionLine.xM > root.minX) && (this.fractionLine.xM < root.maxX) && (this.fractionLine.yM > root.minY)
+				&& (this.fractionLine.yM < root.maxY)) {
 			return true;
 		}
 
@@ -128,6 +142,13 @@ public class FractionNode extends AbstractNode {
 	}
 
 	public List<AbstractNode> getNumerators() {
+		Collections.sort(this.numerators, new Comparator<AbstractNode>() {
+			@Override
+			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
+			}
+		});
+		
 		return this.numerators;
 	}
 
@@ -136,6 +157,13 @@ public class FractionNode extends AbstractNode {
 	}
 
 	public List<AbstractNode> getDenominators() {
+		Collections.sort(this.denominators, new Comparator<AbstractNode>() {
+			@Override
+			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
+			}
+		});
+		
 		return this.denominators;
 	}
 
@@ -149,6 +177,39 @@ public class FractionNode extends AbstractNode {
 
 	public void setFractionLine(RasterRegion fraction) {
 		this.fractionLine = fraction;
+	}
+
+	@Override
+	public double getMinY() {
+		double min = Double.MAX_VALUE;
+
+		for (AbstractNode abstractNode : numerators) {
+			double minY = abstractNode.getMinY();
+			if (minY < min) {
+				min = minY;
+			}
+		}
+
+		return min;
+	}
+
+	@Override
+	public double getMaxY() {
+		double max = Double.MIN_VALUE;
+
+		for (AbstractNode abstractNode : denominators) {
+			double maxY = abstractNode.getMaxY();
+			if (maxY > max) {
+				max = maxY;
+			}
+		}
+
+		return max;
+	}
+
+	@Override
+	public Point getCenterWithoutExponents() {
+		return getCenter();
 	}
 
 }

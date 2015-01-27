@@ -198,23 +198,7 @@ public class BackPropagation {
 		return this.calculateOutput();
 	}
 
-	public int izracunajCifru(double[] data) {
-		double[] d = this.calculate(data);
-		// izracunati koja je cifra prepoznata na osnovu
-		// podataka na izlazima neuronske mreze
-		double max = 0;
-		int index = 0;
-		for (int i = 0; i < this.outputNum; i++) {
-			if (d[i] > max) {
-				max = d[i];
-				index = i;
-			}
-		}
-
-		return index;
-	}
-
-	public Point2D.Float calculateIndex(double[] data) {
+	public BackPropagationOutput calculateOutput(double[] data) {
 		double[] d = this.calculate(data);
 		double max = 0;
 		int index = 0;
@@ -227,7 +211,7 @@ public class BackPropagation {
 
 		}
 
-		return new Point2D.Float((float) max, index);
+		return new BackPropagationOutput(index, max);
 	}
 
 }

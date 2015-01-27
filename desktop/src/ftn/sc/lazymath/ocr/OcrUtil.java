@@ -21,18 +21,18 @@ public class OcrUtil {
 	public static Map<String, Integer> alfabet = new HashMap<String, Integer>();
 	public static Map<Integer, String> alfabetInv = new HashMap<Integer, String>();
 
-	public static BufferedImage convertImage(BufferedImage bitmap) {
-		int[][] image = convertImageToMatrix(bitmap);
+	public static BufferedImage convertImage(BufferedImage bitmap, double a, double b) {
+		int[][] image = convertImageToMatrix(bitmap, a, b);
 
 		BufferedImage processed = ImageUtil.matrixToBitmap(image);
 
 		return processed;
 	}
 
-	public static int[][] convertImageToMatrix(BufferedImage bitmap) {
+	public static int[][] convertImageToMatrix(BufferedImage bitmap, double a, double b) {
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
 
-		image = ImageUtil.christiansMethod(image);
+		image = ImageUtil.christiansMethod(image, a, b);
 
 		return image;
 	}

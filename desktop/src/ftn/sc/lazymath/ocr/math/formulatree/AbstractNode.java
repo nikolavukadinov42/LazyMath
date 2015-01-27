@@ -15,9 +15,18 @@ public abstract class AbstractNode {
 	public abstract List<RasterRegion> getRasterRegions();
 
 	public abstract Point getCenter();
+	public abstract Point getCenterWithoutExponents();
+	public abstract List<DefaultNode> getDefaultNodes();
 
+	public abstract double getMinY();
+	public abstract double getMaxY();
+	
 	public double getMinX() {
 		return this.region.minX;
+	}
+	
+	public double getMaxX() {
+		return this.region.maxX;
 	}
 
 	public RasterRegion getRasterRegion() {

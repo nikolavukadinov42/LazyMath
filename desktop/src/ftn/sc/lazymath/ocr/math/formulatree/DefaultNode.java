@@ -12,6 +12,7 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 public class DefaultNode extends AbstractNode {
 
 	protected List<AbstractNode> exponent = new ArrayList<AbstractNode>();
+	private DefaultNode index;
 
 	public DefaultNode(RasterRegion region) {
 		this.region = region;
@@ -30,6 +31,15 @@ public class DefaultNode extends AbstractNode {
 		}
 
 		return ret;
+	}
+
+	@Override
+	public List<DefaultNode> getDefaultNodes() {
+		List<DefaultNode> defaultNodes = new ArrayList<DefaultNode>();
+		if (region != null) {
+			defaultNodes.add(this);
+		}
+		return defaultNodes;
 	}
 
 	@Override
@@ -52,17 +62,37 @@ public class DefaultNode extends AbstractNode {
 	}
 
 	@Override
+	public Point getCenterWithoutExponents() {
+		double x = 0;
+		double y = 0;
+
+		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+
+		return new Point((int) x, (int) y);
+	}
+
+	
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(this.region.tag);
+		
+		if (this.index != null) {
+			sb.append("_(" + index.getRasterRegion().tag + ")");
+		}
 
 		if (this.exponent.size() > 0) {
-			sb.append("^");
+			sb.append("^(");
 		}
 
 		for (AbstractNode abstractNode : this.exponent) {
 			sb.append(abstractNode);
+		}
+
+		if (this.exponent.size() > 0) {
+			sb.append(")");
 		}
 
 		return sb.toString();
@@ -76,6 +106,26 @@ public class DefaultNode extends AbstractNode {
 		}
 
 		return null;
+	}
+	
+	public List<AbstractNode> getExponents() {
+		return exponent;
+	}
+	
+	public List<RasterRegion> getExponentsRegions() {
+		List<RasterRegion> regions = new ArrayList<RasterRegion>();
+		for (AbstractNode node : exponent) {
+			regions.add(node.getRasterRegion());
+		}
+		return regions;
+	}
+
+	public void addExponent(AbstractNode exponent) {
+		this.exponent.add(exponent);
+	}
+
+	public void removeExponent(AbstractNode exponent) {
+		this.exponent.remove(exponent);
 	}
 
 	public void setExponent(List<AbstractNode> exponent) {
@@ -108,6 +158,28 @@ public class DefaultNode extends AbstractNode {
 	public int hashCode() {
 		// TODO Auto-generated method stub
 		return this.region.hashCode();
+	}
+
+	@Override
+	public double getMinY() {
+		return region.minY;
+	}
+
+	@Override
+	public double getMaxY() {
+		return region.maxY;
+	}
+
+	public void addIndex(DefaultNode index) {
+		this.index = index;
+	}
+
+	public DefaultNode getIndex() {
+		return index;
+	}
+
+	public void setIndex(DefaultNode index) {
+		this.index = index;
 	}
 
 }

@@ -17,7 +17,7 @@ import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
  */
 public abstract class OcrTemplate {
 
-	protected NeuralNetwork neuralNetwork;
+	protected List<NeuralNetwork> neuralNetworks;
 
 	protected List<RasterRegion> regions = new ArrayList<RasterRegion>();
 	protected List<RasterRegion> backupRegions = new ArrayList<RasterRegion>();
@@ -25,8 +25,8 @@ public abstract class OcrTemplate {
 	public OcrTemplate() {
 	}
 
-	public OcrTemplate(NeuralNetwork neuralNetwork) {
-		this.neuralNetwork = neuralNetwork;
+	public OcrTemplate(List<NeuralNetwork> neuralNetworks) {
+		this.neuralNetworks = neuralNetworks;
 	}
 
 	public BufferedImage processImage(int[][] image) {

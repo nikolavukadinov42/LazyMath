@@ -32,15 +32,16 @@ public class NeuralNetwork {
 		this.alphabetInverse = alphabetInverse;
 	}
 
-	public String recognize(RasterRegion region) {
-		int[][] image = region.determineNormalImage();
+	public NeuralNetworkResult recognize(RasterRegion region) {
+		int[][] image = region.determineImage();
 		image = ImageUtil.getScaledImage(image, 64, 64);
 
 		double[] input = OcrUtil.prepareImageForNeuralNetwork(image);
 
-		int num = this.backPropagation.izracunajCifru(input);
+		BackPropagationOutput result = this.backPropagation.calculateOutput(input);
 
-		return this.alphabetInverse.get(num);
+		return new NeuralNetworkResult(this.alphabetInverse.get(result.getIndex()),
+				result.getOutputValue());
 	}
 
 	private void tagRegions(List<RasterRegion> regions, String input) {
@@ -69,7 +70,7 @@ public class NeuralNetwork {
 		for (int bpSample = 0; bpSample < numberOfSamples; bpSample++) {
 			RasterRegion region = regions.get(bpSample);
 
-			int[][] regionImage = region.determineNormalImage();
+			int[][] regionImage = region.determineImage();
 			int[][] scaledImage = ImageUtil.getScaledImage(regionImage, 64, 64);
 
 			double[] bpInput = OcrUtil.prepareImageForNeuralNetwork(scaledImage);

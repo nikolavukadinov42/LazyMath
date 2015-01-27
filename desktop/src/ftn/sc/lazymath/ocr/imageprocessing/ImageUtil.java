@@ -401,14 +401,15 @@ public class ImageUtil {
 		return ImageUtil.matrixToBinary(image, (int) ((threshold1 + threshold2) / 2.0));
 	}
 
-	public static int[][] christiansMethod(int[][] image) {
+	public static int[][] christiansMethod(int[][] image, double a, double b) {
 		int h = image.length;
 		int w = image[0].length;
 
-		int d = 20;
+		int tY = (int) (h / a);
+		int tX = (int) (w / b);
 
-		int dH = h / d;
-		int dW = w / d;
+		int dH = h / tY;
+		int dW = w / tY;
 
 		int[][] ret = new int[h][w];
 
@@ -423,9 +424,10 @@ public class ImageUtil {
 		// hash for maps is y + x * 100
 		Map<Integer, Double> means = new HashMap<Integer, Double>();
 		Map<Integer, Double> stDevs = new HashMap<Integer, Double>();
-		for (int y = 0; y < d; y++) {
-			for (int x = 0; x < d; x++) {
+		for (int y = 0; y < tY + 1; y++) {
+			for (int x = 0; x < tX + 1; x++) {
 				// calculate min val
+				// TODO correct?
 				int val = image[y][x];
 				if (val < minVal) {
 					minVal = val;
@@ -435,7 +437,9 @@ public class ImageUtil {
 				double mean = 0;
 				for (int i = 0; i < dH; i++) {
 					for (int j = 0; j < dW; j++) {
-						mean += image[y * dH + i][x * dW + j];
+						if (y * dH + i < h && x * dW + j < w) {
+							mean += image[y * dH + i][x * dW + j];
+						}
 					}
 				}
 
@@ -446,7 +450,9 @@ public class ImageUtil {
 				double stDev = 0;
 				for (int i = 0; i < dH; i++) {
 					for (int j = 0; j < dW; j++) {
-						stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+						if (y * dH + i < h && x * dW + j < w) {
+							stDev += Math.abs(mean - image[y * dH + i][x * dW + j]);
+						}
 					}
 				}
 
@@ -462,8 +468,8 @@ public class ImageUtil {
 
 		// apply method to locals
 		double k = 0.5;
-		for (int y = 0; y < d; y++) {
-			for (int x = 0; x < d; x++) {
+		for (int y = 0; y < tY + 1; y++) {
+			for (int x = 0; x < tX + 1; x++) {
 				double mean = means.get(y + x * 100);
 				double stDev = stDevs.get(y + x * 100);
 
@@ -475,7 +481,9 @@ public class ImageUtil {
 
 				for (int i = 0; i < dH; i++) {
 					for (int j = 0; j < dW; j++) {
-						tile[i][j] = image[y * dH + i][x * dW + j];
+						if (y * dH + i < h && x * dW + j < w) {
+							tile[i][j] = image[y * dH + i][x * dW + j];
+						}
 					}
 				}
 
@@ -483,7 +491,9 @@ public class ImageUtil {
 
 				for (int i = 0; i < dH; i++) {
 					for (int j = 0; j < dW; j++) {
-						ret[y * dH + i][x * dW + j] = cTile[i][j];
+						if (y * dH + i < h && x * dW + j < w) {
+							ret[y * dH + i][x * dW + j] = cTile[i][j];
+						}
 					}
 				}
 			}
@@ -504,26 +514,6 @@ public class ImageUtil {
 		}
 
 		return mean / (w * h);
-	}
-
-	public static double mean2(int[][] image) {
-		int w = image[0].length;
-		int h = image.length;
-		int mean = 0;
-		int count = 0;
-
-		List<Integer> foo = new ArrayList<>();
-		for (int y = 0; y < h; y++) {
-			for (int x = 0; x < w; x++) {
-				if (!foo.contains(image[y][x])) {
-					foo.add(image[y][x]);
-					mean += image[y][x];
-					count++;
-				}
-			}
-		}
-
-		return mean / count;
 	}
 
 	public static int[][] getScaledImage(int[][] bImage, int newWidth, int newHeight) {
@@ -582,7 +572,7 @@ public class ImageUtil {
 		int h = image.length;
 		int w = image[0].length;
 
-		int d = 6;
+		int d = 12;
 
 		int dH = h / d;
 		int dW = w / d;
@@ -637,10 +627,6 @@ public class ImageUtil {
 
 		for (int y = 0; y < d; y++) {
 			for (int x = 0; x < d; x++) {
-				boolean yZero = y == 0;
-				boolean yMax = y == (d - 1);
-				boolean xZero = x == 0;
-				boolean xMax = x == (d - 1);
 
 				// calculate larger window mean
 				int count = 0;
@@ -649,52 +635,16 @@ public class ImageUtil {
 				lwMean += means.get(y + x * 100);
 				count++;
 
-				if (!yZero) {
-					// up
-					lwMean += means.get(y - 1 + x * 100);
-					count++;
+				for (int i = -2; i <= 2; i++) {
+					for (int j = -2; j <= 2; j++) {
+						int yy = y + i;
+						int xx = x + j;
 
-					// left up
-					if (!xZero) {
-						lwMean += means.get(y - 1 + (x - 1) * 100);
-						count++;
+						if (yy > 0 && yy < d && xx > 0 && xx < d) {
+							lwMean += means.get(yy + xx * 100);
+							count++;
+						}
 					}
-
-					// left right
-					if (!xMax) {
-						lwMean += means.get(y - 1 + (x + 1) * 100);
-						count++;
-					}
-				}
-
-				if (!yMax) {
-					// down
-					lwMean += means.get(y + 1 + x * 100);
-					count++;
-
-					// left down
-					if (!xZero) {
-						lwMean += means.get(y + 1 + (x - 1) * 100);
-						count++;
-					}
-
-					// right down
-					if (!xMax) {
-						lwMean += means.get(y + 1 + (x + 1) * 100);
-						count++;
-					}
-				}
-
-				// left
-				if (!xZero) {
-					lwMean += means.get(y + (x - 1) * 100);
-					count++;
-				}
-
-				// right
-				if (!xMax) {
-					lwMean += means.get(y + (x + 1) * 100);
-					count++;
 				}
 
 				lwMean = lwMean / count;
@@ -707,56 +657,16 @@ public class ImageUtil {
 						lwStDev += Math.abs(lwMean - image[y * dH + i][x * dW + j]);
 						count++;
 
-						if (!yZero) {
-							// up
-							lwStDev += Math.abs(lwMean - image[(y - 1) * dH + i][(x) * dW + j]);
-							count++;
+						for (int ii = -1; ii <= 1; ii++) {
+							for (int jj = -1; jj <= 1; jj++) {
+								int yy = y + ii;
+								int xx = x + jj;
 
-							// left up
-							if (!xZero) {
-								lwStDev += Math.abs(lwMean
-										- image[(y - 1) * dH + i][(x - 1) * dW + j]);
-								count++;
+								if (yy > 0 && yy < d && xx > 0 && xx < d) {
+									lwMean += means.get(yy + xx * 100);
+									count++;
+								}
 							}
-
-							// left right
-							if (!xMax) {
-								lwStDev += Math.abs(lwMean
-										- image[(y - 1) * dH + i][(x + 1) * dW + j]);
-								count++;
-							}
-						}
-
-						if (!yMax) {
-							// down
-							lwStDev += Math.abs(lwMean - image[(y + 1) * dH + i][(x) * dW + j]);
-							count++;
-
-							// left down
-							if (!xZero) {
-								lwStDev += Math.abs(lwMean
-										- image[(y + 1) * dH + i][(x - 1) * dW + j]);
-								count++;
-							}
-
-							// right down
-							if (!xMax) {
-								lwStDev += Math.abs(lwMean
-										- image[(y + 1) * dH + i][(x + 1) * dW + j]);
-								count++;
-							}
-						}
-
-						// left
-						if (!xZero) {
-							lwStDev += Math.abs(lwMean - image[y * dH + i][(x - 1) * dW + j]);
-							count++;
-						}
-
-						// right
-						if (!xMax) {
-							lwStDev += Math.abs(lwMean - image[y * dH + i][(x + 1) * dW + j]);
-							count++;
 						}
 					}
 				}

@@ -1,6 +1,8 @@
 package ftn.sc.lazymath.ocr;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
@@ -59,15 +61,14 @@ public class OcrMath extends OcrTemplate {
 		nodes.addAll(FormulaUtil.getFractionNodes(regions));
 		nodes.addAll(FormulaUtil.getNthRootNodes(regions, nodes));
 		nodes.addAll(FormulaUtil.getDefaultNodes(regions));
-		
+
 		Collections.sort(nodes, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
 				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
-		
-		
+
 		FormulaUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
 		this.formula.addNodes(nodes);
@@ -90,11 +91,11 @@ public class OcrMath extends OcrTemplate {
 				for (AbstractNode abstractNode : ((DefaultNode) node).getExponents()) {
 					this.setNodeCharacter(abstractNode);
 				}
-				
+
 				if (((DefaultNode) node).getIndex() != null) {
 					this.setNodeCharacter(((DefaultNode) node).getIndex());
 				}
-				
+
 				// recognize node - get its character
 				double max = Double.MIN_VALUE;
 				String character = null;
