@@ -3,11 +3,13 @@ package sc.lazymath.util;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.hardware.Camera;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
 
@@ -137,26 +139,23 @@ public class CameraUtil {
 
         AbsoluteLayout window = (AbsoluteLayout) activity.findViewById(R.id.camera_window);
 
-        DisplayMetrics displayMetrics = activity.getApplicationContext().getResources()
-                .getDisplayMetrics();
-
         int h = window.getHeight() - 80;
         int w = window.getWidth();
 
         int width = seButton.getWidth();
         int height = seButton.getHeight();
 
-        seButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.75 - width / 2),
-                (int) (h * 0.75 - height / 2)));
+        seButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height,
+                (int) (w * 0.75 - width / 2), (int) (h * 0.75 - height / 2)));
 
-        swButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.25 - width / 2),
-                (int) (h * 0.75 - height / 2)));
+        swButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height,
+                (int) (w * 0.25 - width / 2), (int) (h * 0.75 - height / 2)));
 
-        neButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.75 - width / 2),
-                (int) (h * 0.25 - height / 2)));
+        neButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height,
+                (int) (w * 0.75 - width / 2), (int) (h * 0.25 - height / 2)));
 
-        nwButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height, (int) (w * 0.25 - width / 2),
-                (int) (h * 0.25 - height / 2)));
+        nwButton.setLayoutParams(new AbsoluteLayout.LayoutParams(width, height,
+                (int) (w * 0.25 - width / 2), (int) (h * 0.25 - height / 2)));
 
         ret.add(seButton);
         ret.add(swButton);
@@ -189,119 +188,138 @@ public class CameraUtil {
         int width = button.getWidth();
         int height = button.getHeight();
 
-        float x = e.getRawX() - width / 2;
-        float y = e.getRawY() - height * 2;
+        int statusBarHeight = AndroidUtil.getStatusBarHeight(activity);
 
-        boolean flagX = false;
-        boolean flagY = false;
+        AbsoluteLayout layout = (AbsoluteLayout) button.getParent();
+        int layoutHeight = layout.getHeight() - statusBarHeight;
+        int layoutWidth = layout.getWidth();
+
+        int x = (int) (e.getRawX() - width / 2);
+        int y = (int) (e.getRawY() - height * 3);
+
+        int dX;
+        int dY;
+
+        Point nePosition = new Point();
+        Point nwPosition = new Point();
+        Point sePosition = new Point();
+        Point swPosition = new Point();
+
+        Button neButton = (Button) activity.findViewById(R.id.button_ne);
+        Button swButton = (Button) activity.findViewById(R.id.button_sw);
+        Button nwButton = (Button) activity.findViewById(R.id.button_nw);
+        Button seButton = (Button) activity.findViewById(R.id.button_se);
+
+        boolean resizeX = false;
+        boolean resizeY = false;
 
         // move adjacent buttons
         switch (button.getId()) {
             case R.id.button_se: {
-                Button neButton = (Button) activity.findViewById(R.id.button_ne);
-                Button swButton = (Button) activity.findViewById(R.id.button_sw);
+                dX = layoutWidth - (x + width);
+                dY = layoutHeight - (y + height);
 
-                if (((x - swButton.getX()) < MARGIN_X)
+                if (dX < layoutWidth / 3) {
                     //|| (x > (size.x - (width / 2)))
-                        ) {
-                    flagX = true;
-                } else {
-                    // move sw by x
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) x, (int) neButton.getY());
-                    neButton.setLayoutParams(params);
+                    resizeX = true;
+
+                    sePosition.x = x;
+                    nePosition.x = x;
+
+                    nwPosition.x = dX;
+                    swPosition.x = dX;
                 }
 
-                if (((y - neButton.getY()) < MARGIN_Y)
+                if (dY < layoutHeight / 3) {
                     //|| (y > (size.y - (height / 2)))
-                        ) {
-                    flagY = true;
-                } else {
-                    // move ne by y
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) swButton.getX(), (int) y);
-                    swButton.setLayoutParams(params);
+                    resizeY = true;
+
+                    sePosition.y = y;
+                    swPosition.y = y;
+
+                    nwPosition.y = dY;
+                    nePosition.y = dY;
                 }
             }
             break;
             case R.id.button_sw: {
-                Button nwButton = (Button) activity.findViewById(R.id.button_nw);
-                Button seButton = (Button) activity.findViewById(R.id.button_se);
+                dX = x;
+                dY = layoutHeight - (y + height);
 
-                if (((seButton.getX() - x) < MARGIN_X)
+                if (dX < layoutWidth / 3) {
                     //|| (x < (width / 2))
-                        ) {
-                    flagX = true;
-                } else {
-                    // move se by x
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) x, (int) nwButton.getY());
-                    nwButton.setLayoutParams(params);
+                    resizeX = true;
+
+                    swPosition.x = x;
+                    nwPosition.x = x;
+
+                    nePosition.x = layoutWidth - dX - width;
+                    sePosition.x = layoutWidth - dX - width;
                 }
 
-                if (((y - nwButton.getY()) < MARGIN_Y)
+                if (dY < layoutHeight / 3) {
                     //|| (y > (size.y - (height / 2)))
-                        ) {
-                    flagY = true;
-                } else {
-                    // move nw by y
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) seButton.getX(), (int) y);
-                    seButton.setLayoutParams(params);
+                    resizeY = true;
+
+                    sePosition.y = y;
+                    swPosition.y = y;
+
+                    nwPosition.y = dY;
+                    nePosition.y = dY;
                 }
             }
             break;
             case R.id.button_ne: {
-                Button seButton = (Button) activity.findViewById(R.id.button_se);
-                Button nwButton = (Button) activity.findViewById(R.id.button_nw);
+                dX = layoutWidth - (x + width);
+                dY = y - statusBarHeight;
 
-                if (((x - nwButton.getX()) < MARGIN_X)
+                if (dX < layoutWidth / 3) {
                     //|| (x > (size.x - (width / 2)))
-                        ) {
-                    flagX = true;
-                } else {
-                    // move se by x
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) x, (int) seButton.getY());
-                    seButton.setLayoutParams(params);
+                    resizeX = true;
+
+                    nePosition.x = x;
+                    sePosition.x = x;
+
+                    swPosition.x = dX;
+                    nwPosition.x = dX;
                 }
 
-                if (((seButton.getY() - y) < MARGIN_Y)
+                if (dY < layoutHeight / 3) {
                     //|| (y < (height / 2))
-                        ) {
-                    flagY = true;
-                } else {
-                    // move nw by y
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) nwButton.getX(), (int) y);
-                    nwButton.setLayoutParams(params);
+                    resizeY = true;
+
+                    nePosition.y = y;
+                    nwPosition.y = y;
+
+                    sePosition.y = layoutHeight - dY - height;
+                    swPosition.y = layoutHeight - dY - height;
                 }
             }
             break;
             case R.id.button_nw: {
-                Button swButton = (Button) activity.findViewById(R.id.button_sw);
-                Button neButton = (Button) activity.findViewById(R.id.button_ne);
+                dX = x;
+                dY = y - statusBarHeight;
 
-                if (((neButton.getX() - x) < MARGIN_X)
+                if (dX < layoutWidth / 3) {
                     //|| (x < (width / 2))
-                        ) {
-                    flagX = true;
-                } else {
-                    // move sw by x
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) x, (int) swButton.getY());
-                    swButton.setLayoutParams(params);
+                    resizeX = true;
+
+                    nwPosition.x = x;
+                    swPosition.x = x;
+
+                    nePosition.x = layoutWidth - dX - width;
+                    sePosition.x = layoutWidth - dX - width;
                 }
 
-                if (((swButton.getY() - y) < MARGIN_Y)
+                if (dY < layoutHeight / 3) {
                     //|| (y < (height / 2))
-                        ) {
-                    flagY = true;
-                } else {
-                    // move ne by y
-                    AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width,
-                            height, (int) neButton.getX(), (int) y);
-                    neButton.setLayoutParams(params);
+                    resizeY = true;
+
+                    nePosition.y = y;
+                    nwPosition.y = y;
+
+                    sePosition.y = layoutHeight - dY - height;
+                    swPosition.y = layoutHeight - dY - height;
                 }
             }
             break;
@@ -310,8 +328,24 @@ public class CameraUtil {
         }
 
         // move button
-        AbsoluteLayout.LayoutParams params = new AbsoluteLayout.LayoutParams(width, height,
-                (int) (flagX ? button.getX() : x), (int) (flagY ? button.getY() : y));
-        button.setLayoutParams(params);
+        AbsoluteLayout.LayoutParams seParams = new AbsoluteLayout.LayoutParams(width, height,
+                resizeX ? sePosition.x : (int) seButton.getX(), resizeY ? sePosition.y : (int)
+                seButton.getY());
+        seButton.setLayoutParams(seParams);
+
+        AbsoluteLayout.LayoutParams swParams = new AbsoluteLayout.LayoutParams(width, height,
+                resizeX ? swPosition.x : (int) swButton.getX(), resizeY ? swPosition.y : (int)
+                swButton.getY());
+        swButton.setLayoutParams(swParams);
+
+        AbsoluteLayout.LayoutParams neParams = new AbsoluteLayout.LayoutParams(width, height,
+                resizeX ? nePosition.x : (int) neButton.getX(), resizeY ? nePosition.y : (int)
+                neButton.getY());
+        neButton.setLayoutParams(neParams);
+
+        AbsoluteLayout.LayoutParams nwParams = new AbsoluteLayout.LayoutParams(width, height,
+                resizeX ? nwPosition.x : (int) nwButton.getX(), resizeY ? nwPosition.y : (int)
+                nwButton.getY());
+        nwButton.setLayoutParams(nwParams);
     }
 }
