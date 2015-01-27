@@ -12,6 +12,7 @@ import ftn.sc.lazymath.ocr.math.formulatree.Formula;
 import ftn.sc.lazymath.ocr.math.formulatree.FractionNode;
 import ftn.sc.lazymath.ocr.math.formulatree.NthRootNode;
 import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
+import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetworkResult;
 import ftn.sc.lazymath.util.CollectionUtil;
 
 /**
@@ -25,8 +26,8 @@ public class OcrMath extends OcrTemplate {
 	protected Formula formula;
 	private String inputString;
 
-	public OcrMath(NeuralNetwork neuralNetwork) {
-		super(neuralNetwork);
+	public OcrMath(List<NeuralNetwork> neuralNetworks) {
+		super(neuralNetworks);
 	}
 
 	public OcrMath(String inputString) {
@@ -58,6 +59,16 @@ public class OcrMath extends OcrTemplate {
 		nodes.addAll(FormulaUtil.getFractionNodes(regions));
 		nodes.addAll(FormulaUtil.getNthRootNodes(regions, nodes));
 		nodes.addAll(FormulaUtil.getDefaultNodes(regions));
+		
+		Collections.sort(nodes, new Comparator<AbstractNode>() {
+			@Override
+			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
+			}
+		});
+		
+		
+		FormulaUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
 		this.formula.addNodes(nodes);
 	}
@@ -76,25 +87,49 @@ public class OcrMath extends OcrTemplate {
 
 		if (r != null) {
 			if (node instanceof DefaultNode) {
-				r.tag = this.neuralNetwork.recognize(r);
+				for (AbstractNode abstractNode : ((DefaultNode) node).getExponents()) {
+					this.setNodeCharacter(abstractNode);
+				}
+				
+				if (((DefaultNode) node).getIndex() != null) {
+					this.setNodeCharacter(((DefaultNode) node).getIndex());
+				}
+				
+				// recognize node - get its character
+				double max = Double.MIN_VALUE;
+				String character = null;
+				for (NeuralNetwork neuralNetwork : this.neuralNetworks) {
+					NeuralNetworkResult result = neuralNetwork.recognize(r);
+
+					if (result.getOutputValue() > max) {
+						max = result.getOutputValue();
+						character = result.getCharacter();
+					}
+				}
+
+				r.tag = character;
 			} else if (node instanceof NthRootNode) {
 				NthRootNode nrn = (NthRootNode) node;
 
+				// call recognizing of exponent node
 				AbstractNode e = nrn.getExponent();
 				if (e != null) {
 					this.setNodeCharacter(e);
 				}
 
+				// call recognizing of element nodes
 				for (AbstractNode n : nrn.getElements()) {
 					this.setNodeCharacter(n);
 				}
 			} else if (node instanceof FractionNode) {
 				FractionNode fn = (FractionNode) node;
 
+				// call recognizing of numerator nodes
 				for (AbstractNode n : fn.getNumerators()) {
 					this.setNodeCharacter(n);
 				}
 
+				// call recognizing of denominator nodes
 				for (AbstractNode n : fn.getDenominators()) {
 					this.setNodeCharacter(n);
 				}
