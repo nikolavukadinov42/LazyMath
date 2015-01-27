@@ -1,20 +1,21 @@
-package ftn.sc.lazymath.ocr.math.formulatree;
+package ftn.sc.lazymath.ocr.math.simplenode;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
+import ftn.sc.lazymath.ocr.math.AbstractNode;
 
 /**
  * Created by nikola42 on 12/29/2014.
  */
-public class DefaultNode extends AbstractNode {
+public class SimpleNode extends AbstractNode {
 
 	protected List<AbstractNode> exponent = new ArrayList<AbstractNode>();
-	private DefaultNode index;
+	private SimpleNode index;
 
-	public DefaultNode(RasterRegion region) {
+	public SimpleNode(RasterRegion region) {
 		this.region = region;
 
 		this.exponent = new ArrayList<>();
@@ -34,9 +35,9 @@ public class DefaultNode extends AbstractNode {
 	}
 
 	@Override
-	public List<DefaultNode> getDefaultNodes() {
-		List<DefaultNode> defaultNodes = new ArrayList<DefaultNode>();
-		if (region != null) {
+	public List<SimpleNode> getDefaultNodes() {
+		List<SimpleNode> defaultNodes = new ArrayList<SimpleNode>();
+		if (this.region != null) {
 			defaultNodes.add(this);
 		}
 		return defaultNodes;
@@ -72,15 +73,14 @@ public class DefaultNode extends AbstractNode {
 		return new Point((int) x, (int) y);
 	}
 
-	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(this.region.tag);
-		
+
 		if (this.index != null) {
-			sb.append("_(" + index.getRasterRegion().tag + ")");
+			sb.append("_(" + this.index.getRasterRegion().tag + ")");
 		}
 
 		if (this.exponent.size() > 0) {
@@ -100,21 +100,21 @@ public class DefaultNode extends AbstractNode {
 
 	public AbstractNode getExponent(RasterRegion region) {
 		for (AbstractNode abstractNode : this.exponent) {
-			if (abstractNode.region == region) {
+			if (abstractNode.getRasterRegion() == region) {
 				return abstractNode;
 			}
 		}
 
 		return null;
 	}
-	
+
 	public List<AbstractNode> getExponents() {
-		return exponent;
+		return this.exponent;
 	}
-	
+
 	public List<RasterRegion> getExponentsRegions() {
 		List<RasterRegion> regions = new ArrayList<RasterRegion>();
-		for (AbstractNode node : exponent) {
+		for (AbstractNode node : this.exponent) {
 			regions.add(node.getRasterRegion());
 		}
 		return regions;
@@ -144,10 +144,10 @@ public class DefaultNode extends AbstractNode {
 		if (obj == this) {
 			return true;
 		}
-		if (!(obj instanceof DefaultNode)) {
+		if (!(obj instanceof SimpleNode)) {
 			return false;
 		}
-		DefaultNode node = (DefaultNode) obj;
+		SimpleNode node = (SimpleNode) obj;
 		if (node.getRasterRegion().equals(this.region)) {
 			return true;
 		}
@@ -162,23 +162,23 @@ public class DefaultNode extends AbstractNode {
 
 	@Override
 	public double getMinY() {
-		return region.minY;
+		return this.region.minY;
 	}
 
 	@Override
 	public double getMaxY() {
-		return region.maxY;
+		return this.region.maxY;
 	}
 
-	public void addIndex(DefaultNode index) {
+	public void addIndex(SimpleNode index) {
 		this.index = index;
 	}
 
-	public DefaultNode getIndex() {
-		return index;
+	public SimpleNode getIndex() {
+		return this.index;
 	}
 
-	public void setIndex(DefaultNode index) {
+	public void setIndex(SimpleNode index) {
 		this.index = index;
 	}
 

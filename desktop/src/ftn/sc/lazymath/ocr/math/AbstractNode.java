@@ -1,9 +1,10 @@
-package ftn.sc.lazymath.ocr.math.formulatree;
+package ftn.sc.lazymath.ocr.math;
 
 import java.awt.Point;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
+import ftn.sc.lazymath.ocr.math.simplenode.SimpleNode;
 
 /**
  * Created by nikola42 on 12/29/2014.
@@ -16,11 +17,12 @@ public abstract class AbstractNode {
 
 	public abstract Point getCenter();
 	public abstract Point getCenterWithoutExponents();
-	public abstract List<DefaultNode> getDefaultNodes();
-
+	
 	public abstract double getMinY();
 	public abstract double getMaxY();
 	
+	public abstract List<SimpleNode> getDefaultNodes();
+
 	public double getMinX() {
 		return this.region.minX;
 	}

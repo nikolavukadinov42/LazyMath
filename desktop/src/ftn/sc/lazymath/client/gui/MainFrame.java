@@ -19,7 +19,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 
 import ftn.sc.lazymath.ocr.OcrMath;
 import ftn.sc.lazymath.ocr.OcrTemplate;
@@ -40,7 +39,6 @@ public class MainFrame extends JFrame implements ActionListener {
 	private JButton buttonBlackAndWhite, buttonFindRegions;
 	private ImagePanel imagePanel;
 
-	private String imageFileName = "comb.png";
 	private JButton buttonLoadImage;
 	private JButton buttonTrain;
 	private JButton buttonProcess;
@@ -52,14 +50,57 @@ public class MainFrame extends JFrame implements ActionListener {
 
 	private OcrMath ocrMath = null;
 
-	public static final String DEFAULT_INPUT = "2*kab-/kx/kxaab*by";
-	private JTextField tfHeight;
-	private JTextField tfWidth;
+	// private String imageFileName = "comb.png";
+	// public static final String DEFAULT_INPUT = "2*kab-/kx/kxaab*by";
+
+	// private String imageFileName = "sqrt.png";
+	// public static final String DEFAULT_INPUT = "k3x+kxx+2";
+	//
+	// private String imageFileName = "fraction.png";
+	// public static final String DEFAULT_INPUT = "//x+/a/ab5b+3";
+
+	// private String imageFileName = "exponents1.png";
+	// public static final String DEFAULT_INPUT = "xx+1+(y*2)4";
+
+	// private String imageFileName = "exponents.png";
+	// public static final String DEFAULT_INPUT = "ab+1ab+1ab+22+13";
+
+	// private String imageFileName = "exponents2.png";
+	// public static final String DEFAULT_INPUT =
+	// "ab+1ab+1abbb+22x+13+(x+y)2+a";
+
+	// private String imageFileName = "testt.png";
+	// public static final String DEFAULT_INPUT = "x+y-2*kab-/acdb";
+
+	// private String imageFileName = "complex2.png";
+	// public static final String DEFAULT_INPUT =
+	// "x+y*/a+k/xaa+2*/xb2b+cv+b*/kak/xyx++*y2y";
+
+	// private String imageFileName = "log.png";
+	// public static final String DEFAULT_INPUT = "logyxy-a+b*axy";
+
+	private String imageFileName = "complex1.png";
+	public static final String DEFAULT_INPUT = "x+y*k//xaa+*bb2+/x2cv+b*/kak/xyx++*y2y";
+
+	// private String imageFileName = "sqrt.png";
+	// public static final String DEFAULT_INPUT = "1-/k/xxb+-yy";
+
+	// private String imageFileName = "sqrt-hard.png";
+	// public static final String DEFAULT_INPUT =
+	// "1-/k/xxb+-yy+ka+b-/k/ka/+a/aaa+--z*bbzz";
 	private JButton btnReset;
 
-	// sqrt - k3x+kxx+2
-	// fraction - //x+/a/ab5b+3
-	// combined - 2*kab-/kx/kxaab*by
+	// private String imageFileName = "test1.png";
+	// public static final String DEFAULT_INPUT = "±/x/ka+x112+21*531";
+
+	// private String imageFileName = "razlomak1.png";
+	// public static final String DEFAULT_INPUT = "/-b±k2ba2-4ac";
+
+	// private String imageFileName = "sqrt-exp.png";
+	// public static final String DEFAULT_INPUT = "5-xy+kea+1+c";
+
+	// private String imageFileName = "exp1.png";
+	// public static final String DEFAULT_INPUT = "5-xy+kea+1+c+xk4+xzz+1+h/42";
 
 	public MainFrame() {
 
@@ -101,13 +142,6 @@ public class MainFrame extends JFrame implements ActionListener {
 		panelUp.add(this.buttonComb);
 		this.panelControls.add(panelUp);
 
-		this.tfHeight = new JTextField();
-		panelUp.add(this.tfHeight);
-		this.tfHeight.setColumns(5);
-
-		this.tfWidth = new JTextField();
-		panelUp.add(this.tfWidth);
-		this.tfWidth.setColumns(5);
 		this.panelControls.add(panelBottom);
 
 		this.btnReset = new JButton("Reset");
@@ -128,7 +162,7 @@ public class MainFrame extends JFrame implements ActionListener {
 
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-		// buttonTrainWithOcrMath.doClick();
+		this.buttonTrain.doClick();
 	}
 
 	@Override
@@ -139,10 +173,8 @@ public class MainFrame extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == this.buttonBlackAndWhite) {
-			int[][] image = OcrUtil.convertImageToMatrix(
-					(BufferedImage) this.imagePanel.getImage(),
-					Integer.parseInt(this.tfHeight.getText()),
-					Integer.parseInt(this.tfWidth.getText()));
+			int[][] image = OcrUtil
+					.convertImageToMatrix((BufferedImage) this.imagePanel.getImage());
 			BufferedImage processed = ImageUtil.matrixToBitmap(image);
 			this.imagePanel.setImage(processed);
 		} else if (e.getSource() == this.buttonLoadImage) {
@@ -178,10 +210,8 @@ public class MainFrame extends JFrame implements ActionListener {
 			this.imagePanel.setImage("./res/download.jpg");
 		} else if (e.getSource() == this.buttonProcess) {
 			if (this.ocrMath != null) {
-				int[][] image = OcrUtil.convertImageToMatrix(
-						(BufferedImage) this.imagePanel.getImage(),
-						Integer.parseInt(this.tfHeight.getText()),
-						Integer.parseInt(this.tfWidth.getText()));
+				int[][] image = OcrUtil.convertImageToMatrix((BufferedImage) this.imagePanel
+						.getImage());
 
 				BufferedImage bitmap = ImageUtil.matrixToBitmap(image);
 

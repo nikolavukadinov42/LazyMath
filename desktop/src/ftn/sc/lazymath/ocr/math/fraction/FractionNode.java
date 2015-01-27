@@ -1,4 +1,4 @@
-package ftn.sc.lazymath.ocr.math.formulatree;
+package ftn.sc.lazymath.ocr.math.fraction;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
+import ftn.sc.lazymath.ocr.math.AbstractNode;
+import ftn.sc.lazymath.ocr.math.simplenode.SimpleNode;
 
 /**
  * Created by nikola42 on 12/29/2014.
@@ -39,20 +41,27 @@ public class FractionNode extends AbstractNode {
 		return ret;
 	}
 
-	public List<DefaultNode> getDefaultNodes() {
-		List<DefaultNode> defaultNodes = new ArrayList<DefaultNode>();
+	@Override
+	public List<SimpleNode> getDefaultNodes() {
+		List<SimpleNode> defaultNodes = new ArrayList<SimpleNode>();
 
-		for (AbstractNode node : numerators) {
+		for (AbstractNode node : this.numerators) {
 			defaultNodes.addAll(node.getDefaultNodes());
 		}
-		
-		for (AbstractNode node : denominators) {
+
+		for (AbstractNode node : this.denominators) {
 			defaultNodes.addAll(node.getDefaultNodes());
 		}
 
 		return defaultNodes;
 	}
 
+	/**
+	 * Returns center as center of fraction line region, all numerators and all
+	 * denominators.
+	 *
+	 * @return center of fraction node
+	 */
 	@Override
 	public Point getCenter() {
 		double x = 0;
@@ -79,6 +88,9 @@ public class FractionNode extends AbstractNode {
 				(int) (y / (this.numerators.size() + this.denominators.size() + 1)));
 	}
 
+	/**
+	 * @return "(above)/(below)"
+	 */
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -114,17 +126,6 @@ public class FractionNode extends AbstractNode {
 		return sb.toString();
 	}
 
-	public boolean isInside(RasterRegion root) {
-		System.out.println("ROOT: " + root.tag);
-		System.out.println("FL: " + this.fractionLine.tag);
-		if ((this.fractionLine.xM > root.minX) && (this.fractionLine.xM < root.maxX) && (this.fractionLine.yM > root.minY)
-				&& (this.fractionLine.yM < root.maxY)) {
-			return true;
-		}
-
-		return false;
-	}
-
 	public void addNumerator(AbstractNode node) {
 		this.numerators.add(node);
 	}
@@ -148,7 +149,7 @@ public class FractionNode extends AbstractNode {
 				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
-		
+
 		return this.numerators;
 	}
 
@@ -163,7 +164,7 @@ public class FractionNode extends AbstractNode {
 				return (int) (firstNode.getMinX() - secondNode.getMinX());
 			}
 		});
-		
+
 		return this.denominators;
 	}
 
@@ -183,7 +184,7 @@ public class FractionNode extends AbstractNode {
 	public double getMinY() {
 		double min = Double.MAX_VALUE;
 
-		for (AbstractNode abstractNode : numerators) {
+		for (AbstractNode abstractNode : this.numerators) {
 			double minY = abstractNode.getMinY();
 			if (minY < min) {
 				min = minY;
@@ -197,7 +198,7 @@ public class FractionNode extends AbstractNode {
 	public double getMaxY() {
 		double max = Double.MIN_VALUE;
 
-		for (AbstractNode abstractNode : denominators) {
+		for (AbstractNode abstractNode : this.denominators) {
 			double maxY = abstractNode.getMaxY();
 			if (maxY > max) {
 				max = maxY;
@@ -209,7 +210,7 @@ public class FractionNode extends AbstractNode {
 
 	@Override
 	public Point getCenterWithoutExponents() {
-		return getCenter();
+		return this.getCenter();
 	}
 
 }

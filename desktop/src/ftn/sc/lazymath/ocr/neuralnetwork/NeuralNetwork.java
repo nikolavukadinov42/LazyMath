@@ -44,7 +44,7 @@ public class NeuralNetwork {
 				result.getOutputValue());
 	}
 
-	private void tagRegions(List<RasterRegion> regions, String input) {
+	public static void tagRegions(List<RasterRegion> regions, String input) {
 		for (int i = 0; i < regions.size(); i++) {
 			regions.get(i).tag = String.valueOf(input.charAt(i));
 		}

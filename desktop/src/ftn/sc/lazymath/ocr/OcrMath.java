@@ -7,12 +7,14 @@ import java.util.List;
 
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
-import ftn.sc.lazymath.ocr.math.FormulaUtil;
-import ftn.sc.lazymath.ocr.math.formulatree.AbstractNode;
-import ftn.sc.lazymath.ocr.math.formulatree.DefaultNode;
-import ftn.sc.lazymath.ocr.math.formulatree.Formula;
-import ftn.sc.lazymath.ocr.math.formulatree.FractionNode;
-import ftn.sc.lazymath.ocr.math.formulatree.NthRootNode;
+import ftn.sc.lazymath.ocr.math.AbstractNode;
+import ftn.sc.lazymath.ocr.math.Formula;
+import ftn.sc.lazymath.ocr.math.fraction.FractionNode;
+import ftn.sc.lazymath.ocr.math.fraction.FractionUtil;
+import ftn.sc.lazymath.ocr.math.root.NthRootNode;
+import ftn.sc.lazymath.ocr.math.root.RootUtil;
+import ftn.sc.lazymath.ocr.math.simplenode.SimpleNode;
+import ftn.sc.lazymath.ocr.math.simplenode.SimpleNodeUtil;
 import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
 import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetworkResult;
 import ftn.sc.lazymath.util.CollectionUtil;
@@ -34,7 +36,7 @@ public class OcrMath extends OcrTemplate {
 
 	public OcrMath(String inputString) {
 		this.inputString = inputString;
-		this.formula = new Formula(this.backupRegions);
+		this.formula = new Formula();
 	}
 
 	@Override
@@ -47,6 +49,9 @@ public class OcrMath extends OcrTemplate {
 		int[][] copiedImage = CollectionUtil.deepCopyIntMatrix(image);
 		this.regions = OcrUtil.getRegions(copiedImage);
 
+		// if (neuralNetwork == null)
+		// NeuralNetwork.tagRegions(regions, inputString);
+
 		this.backupRegions.addAll(this.regions);
 	}
 
@@ -55,12 +60,12 @@ public class OcrMath extends OcrTemplate {
 	 */
 	@Override
 	protected void processRegions(List<RasterRegion> regions) {
-		this.formula = new Formula(this.backupRegions);
+		this.formula = new Formula();
 
 		List<AbstractNode> nodes = new ArrayList<AbstractNode>();
-		nodes.addAll(FormulaUtil.getFractionNodes(regions));
-		nodes.addAll(FormulaUtil.getNthRootNodes(regions, nodes));
-		nodes.addAll(FormulaUtil.getDefaultNodes(regions));
+		nodes.addAll(FractionUtil.getFractionNodes(regions));
+		nodes.addAll(RootUtil.getNthRootNodes(regions, nodes));
+		nodes.addAll(SimpleNodeUtil.getSimpleNodes(regions));
 
 		Collections.sort(nodes, new Comparator<AbstractNode>() {
 			@Override
@@ -69,9 +74,19 @@ public class OcrMath extends OcrTemplate {
 			}
 		});
 
-		FormulaUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
+		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
+
+		Collections.sort(nodes, new Comparator<AbstractNode>() {
+			@Override
+			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
+				return (int) (firstNode.getMinX() - secondNode.getMinX());
+			}
+		});
+
+		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
 		this.formula.addNodes(nodes);
+		System.out.println(this.formula);
 	}
 
 	@Override
@@ -87,13 +102,23 @@ public class OcrMath extends OcrTemplate {
 		RasterRegion r = node.getRasterRegion();
 
 		if (r != null) {
-			if (node instanceof DefaultNode) {
-				for (AbstractNode abstractNode : ((DefaultNode) node).getExponents()) {
+			if (node instanceof SimpleNode) {
+				SimpleNode simpleNode = (SimpleNode) node;
+
+				for (AbstractNode abstractNode : simpleNode.getExponents()) {
 					this.setNodeCharacter(abstractNode);
 				}
 
-				if (((DefaultNode) node).getIndex() != null) {
-					this.setNodeCharacter(((DefaultNode) node).getIndex());
+				if (simpleNode.getIndex() != null) {
+					this.setNodeCharacter(simpleNode.getIndex());
+				}
+
+				for (AbstractNode abstractNode : simpleNode.getExponents()) {
+					this.setNodeCharacter(abstractNode);
+				}
+
+				if (simpleNode.getIndex() != null) {
+					this.setNodeCharacter(simpleNode.getIndex());
 				}
 
 				// recognize node - get its character
@@ -113,7 +138,7 @@ public class OcrMath extends OcrTemplate {
 				NthRootNode nrn = (NthRootNode) node;
 
 				// call recognizing of exponent node
-				AbstractNode e = nrn.getExponent();
+				AbstractNode e = nrn.getDegree();
 				if (e != null) {
 					this.setNodeCharacter(e);
 				}
@@ -136,11 +161,6 @@ public class OcrMath extends OcrTemplate {
 				}
 			}
 		}
-	}
-
-	private boolean isUpperRight(RasterRegion r1, RasterRegion r2) {
-		return r1.yM > r2.yM && r1.minY > r2.minY && r2.minX - r1.xM > 0 && r1.maxX < r2.maxX
-				&& r1.yM > r2.maxY;
 	}
 
 	public String getInputString() {

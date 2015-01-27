@@ -1,11 +1,9 @@
-package ftn.sc.lazymath.ocr.math.formulatree;
+package ftn.sc.lazymath.ocr.math;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 
 /**
  * Created by nikola42 on 12/29/2014.
@@ -13,10 +11,8 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
 public class Formula {
 
 	private List<AbstractNode> nodes;
-	private List<RasterRegion> backupRegions;
 
-	public Formula(List<RasterRegion> backupRegions) {
-		this.backupRegions = backupRegions;
+	public Formula() {
 		this.nodes = new ArrayList<AbstractNode>();
 	}
 

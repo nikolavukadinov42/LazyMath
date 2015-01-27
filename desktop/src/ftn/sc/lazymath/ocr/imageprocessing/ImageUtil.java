@@ -401,12 +401,12 @@ public class ImageUtil {
 		return ImageUtil.matrixToBinary(image, (int) ((threshold1 + threshold2) / 2.0));
 	}
 
-	public static int[][] christiansMethod(int[][] image, double a, double b) {
+	public static int[][] christiansMethod(int[][] image) {
 		int h = image.length;
 		int w = image[0].length;
 
-		int tY = (int) (h / a);
-		int tX = (int) (w / b);
+		int tY = h / 15;
+		int tX = w / 20;
 
 		int dH = h / tY;
 		int dW = w / tY;

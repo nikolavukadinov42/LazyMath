@@ -21,22 +21,29 @@ public class OcrUtil {
 	public static Map<String, Integer> alfabet = new HashMap<String, Integer>();
 	public static Map<Integer, String> alfabetInv = new HashMap<Integer, String>();
 
-	public static BufferedImage convertImage(BufferedImage bitmap, double a, double b) {
-		int[][] image = convertImageToMatrix(bitmap, a, b);
+	public static BufferedImage convertImage(BufferedImage bitmap) {
+		int[][] image = convertImageToMatrix(bitmap);
 
 		BufferedImage processed = ImageUtil.matrixToBitmap(image);
 
 		return processed;
 	}
 
-	public static int[][] convertImageToMatrix(BufferedImage bitmap, double a, double b) {
+	public static int[][] convertImageToMatrix(BufferedImage bitmap) {
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
 
-		image = ImageUtil.christiansMethod(image, a, b);
+		image = ImageUtil.christiansMethod(image);
 
 		return image;
 	}
 
+	/**
+	 * Use for screenshots, that is already black and white images.
+	 *
+	 * @param bitmap
+	 *            black and white image
+	 * @return list of raster regions from the given image
+	 */
 	public static List<RasterRegion> getRegions(BufferedImage bitmap) {
 		List<RasterRegion> regions = null;
 
@@ -75,19 +82,6 @@ public class OcrUtil {
 		Collections.sort(regions, new RasterRegion.RegionComparer());
 
 		return regions;
-	}
-
-	public static int[][] deepCopyIntMatrix(int[][] input) {
-		if (input == null) {
-			return null;
-		}
-
-		int[][] result = new int[input.length][];
-		for (int r = 0; r < input.length; r++) {
-			result[r] = input[r].clone();
-		}
-
-		return result;
 	}
 
 	public static double[] prepareImageForNeuralNetwork(int[][] image) {
