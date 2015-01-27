@@ -36,6 +36,24 @@ public class NthRootNode extends AbstractNode {
 
 		return ret;
 	}
+	
+	public List<DefaultNode> getDefaultNodes() {
+		List<DefaultNode> defaultNodes = new ArrayList<DefaultNode>();
+		
+		if (exponent != null && exponent.getRasterRegion() != null) {
+			defaultNodes.add((DefaultNode) exponent);
+		}
+		
+		for (AbstractNode node : elements) {
+			if (node instanceof DefaultNode) {
+				defaultNodes.add((DefaultNode) node);
+			} else {
+				defaultNodes.addAll(node.getDefaultNodes());
+			}
+		}
+		
+		return defaultNodes;
+	}
 
 	@Override
 	public Point getCenter() {
@@ -72,8 +90,6 @@ public class NthRootNode extends AbstractNode {
 			sb.append(")^(1/2)");
 		}
 
-		sb.append(")");
-
 		return sb.toString();
 	}
 
@@ -100,5 +116,9 @@ public class NthRootNode extends AbstractNode {
 	public void setElements(List<AbstractNode> elements) {
 		this.elements = elements;
 	}
-
+	
+	@Override
+	public Point getCenterWithoutExponents() {
+		return getCenter();
+	}
 }
