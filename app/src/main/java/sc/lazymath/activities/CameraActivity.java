@@ -1,6 +1,6 @@
 package sc.lazymath.activities;
 
-import android.graphics.Bitmap;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
@@ -18,7 +18,10 @@ import android.widget.ImageView;
 import java.util.List;
 
 import sc.lazymath.R;
-import sc.lazymath.ocr.Ocr;
+import sc.lazymath.ocr.OcrMath;
+import sc.lazymath.ocr.OcrUtil;
+import sc.lazymath.ocr.imageprocessing.ImageUtil;
+import sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
 import sc.lazymath.util.CameraUtil;
 import sc.lazymath.views.CameraOverlay;
 import sc.lazymath.views.CameraView;
@@ -30,9 +33,14 @@ public class CameraActivity extends ActionBarActivity {
 
     private boolean startingIntent = false;
 
+    private OcrMath ocrMath = null;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        this.ocrMath = new OcrMath(getNeuralNetworks());
+
         setContentView(R.layout.activity_camera);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -55,6 +63,8 @@ public class CameraActivity extends ActionBarActivity {
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+//                Rect rect = CameraUtil.getCropWindow(CameraActivity.this);
+//                CameraUtil.focusCamera(camera, rect);
                 camera.autoFocus(autoFocusCallback);
             }
         });
@@ -137,16 +147,51 @@ public class CameraActivity extends ActionBarActivity {
     private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-            Bitmap image = Ocr.convertImage(data, CameraActivity.this);
+            int[][] image = OcrUtil.convertImage(data, CameraActivity.this);
 
             startingIntent = true;
 
+            // get result from ocr math
+            CameraActivity.this.ocrMath.processImage(image);
+            String result = CameraActivity.this.ocrMath.recognize();
+
+            // put result as extra for solution activity
+            Intent intent = new Intent(CameraActivity.this, SolutionActivity.class);
+            intent.putExtra("query", result);
+
+            // display image
+            image = ImageUtil.getScaledImage(image, 300);
+
             ImageView imageView = new ImageView(getApplicationContext());
-            imageView.setImageBitmap(image);
+            imageView.setImageBitmap(ImageUtil.matrixToBitmap(image));
 
             FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
             preview.addView(imageView);
+
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            // start solution activity
+            CameraActivity.this.startActivity(intent);
         }
     };
+
+    private List<NeuralNetwork> getNeuralNetworks(){
+        // try to open neural networks from disk
+        List<NeuralNetwork> neuralNetworks = OcrUtil.deserializeNeuralNetworks(this.getApplicationContext());
+
+        // if there are no neural networks on disk create them and save them
+        if(neuralNetworks == null){
+            neuralNetworks = OcrUtil.trainNeuralNetworks(this);
+            OcrUtil.serializeNeuralNetworks(this.getApplicationContext(), neuralNetworks);
+        }
+
+        return neuralNetworks;
+    }
+
+
 }
 

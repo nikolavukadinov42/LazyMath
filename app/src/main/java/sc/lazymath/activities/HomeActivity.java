@@ -1,8 +1,6 @@
 package sc.lazymath.activities;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -10,13 +8,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
-import java.util.List;
-
 import sc.lazymath.R;
-import sc.lazymath.ocr.imageprocessing.ImageUtil;
-import sc.lazymath.ocr.imageprocessing.RasterRegion;
-import sc.lazymath.ocr.math.MathOcr;
-import sc.lazymath.ocr.math.formulatree.AbstractNode;
 
 public class HomeActivity extends ActionBarActivity {
 

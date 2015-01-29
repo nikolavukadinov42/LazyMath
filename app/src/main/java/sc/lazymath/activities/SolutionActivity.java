@@ -3,8 +3,8 @@ package sc.lazymath.activities;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
@@ -25,7 +25,6 @@ import com.wolfram.alpha.WAQuery;
 import com.wolfram.alpha.WAQueryResult;
 import com.wolfram.alpha.WASubpod;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,29 +52,33 @@ public class SolutionActivity extends ActionBarActivity {
     private WAEngine wolframAlphaEngine;
     private List<String> podTitles;
     private Map<String, List<WolframAlphaPod>> podContent;
-    private String[] excludeFromWolframAlpha = new String[]{"Input interpretation", "Root plot", "Number line"};
+    private String[] excludeFromWolframAlpha = new String[]{"Input interpretation", "Root plot",
+            "Number line"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_solution);
 
+        Intent intent = getIntent();
+        String query = intent.getStringExtra("query");
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mathProblemEditText = (EditText) findViewById(R.id.mathProblemEditText);
-        mathProblemEditText.setText(DEFAULT_INPUT);
+        mathProblemEditText.setText(query);
         podExpandableListView = (ExpandableListView) findViewById(R.id.podExpandableListView);
 
         progressDialog = new ProgressDialog(this);
         alerDialogBuilder = new AlertDialog.Builder(this);
-        alerDialogBuilder.setCancelable(false)
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        mathProblemEditText.requestFocus();
-                    }
-                });
+        alerDialogBuilder.setCancelable(false).setPositiveButton("Ok",
+                new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                mathProblemEditText.requestFocus();
+            }
+        });
 
         podTitles = new ArrayList<String>();
         podContent = new HashMap<String, List<WolframAlphaPod>>();
@@ -87,6 +90,8 @@ public class SolutionActivity extends ActionBarActivity {
 
         wolframAlphaQuery = wolframAlphaEngine.createQuery();
         wolframAlphaRootQuery = wolframAlphaEngine.createQuery();
+
+        findSolution(query);
     }
 
     @Override
@@ -114,16 +119,26 @@ public class SolutionActivity extends ActionBarActivity {
     }
 
     /**
-     *
      * @param view
      */
     public void findSolutionOnClick(View view) {
         mathProblemEditText.clearFocus();
-        String input = mathProblemEditText.getText().toString();
+
+        findSolution(mathProblemEditText.getText().toString());
+    }
+
+    public void findSolution(String query) {
+        mathProblemEditText.clearFocus();
+
+        String input = query;
+
+        if (query == null) {
+            input = mathProblemEditText.getText().toString();
+        }
+
         if (input.isEmpty()) {
-            AlertDialog dialog = alerDialogBuilder.setTitle("Empty text field")
-                    .setMessage("Please provide math problem")
-                    .create();
+            AlertDialog dialog = alerDialogBuilder.setTitle("Empty text field").setMessage
+                    ("Please provide math problem").create();
             dialog.show();
             return;
         }
@@ -141,8 +156,7 @@ public class SolutionActivity extends ActionBarActivity {
     private class WolframAlphaTask extends AsyncTask<WAQuery, Void, Boolean> {
 
         public WolframAlphaTask() {
-            progressDialog.setTitle("Doing math!");
-            progressDialog.setMessage("Wait...");
+            progressDialog.setMessage("Doing math...");
             progressDialog.show();
         }
 
@@ -154,7 +168,7 @@ public class SolutionActivity extends ActionBarActivity {
             podContent.clear();
 
             try {
-                for(WAQuery query : queries){
+                for (WAQuery query : queries) {
                     WAQueryResult queryResult = wolframAlphaEngine.performQuery(query);
                     result &= parse(queryResult);
                 }
@@ -166,7 +180,6 @@ public class SolutionActivity extends ActionBarActivity {
         }
 
         /**
-         *
          * @param queryResult
          * @return
          */
@@ -174,16 +187,14 @@ public class SolutionActivity extends ActionBarActivity {
             boolean ret;
 
             if (queryResult.isError()) {
-                AlertDialog dialog = alerDialogBuilder.setTitle("Query error")
-                        .setMessage("error message: " + queryResult.getErrorMessage())
-                        .create();
+                AlertDialog dialog = alerDialogBuilder.setTitle("Query error").setMessage("error " +
+                        "message: " + queryResult.getErrorMessage()).create();
                 dialog.show();
 
                 ret = false;
             } else if (!queryResult.isSuccess()) {
-                AlertDialog dialog = alerDialogBuilder.setTitle("Query error")
-                        .setMessage("Query was not understood; no results available.")
-                        .create();
+                AlertDialog dialog = alerDialogBuilder.setTitle("Query error").setMessage("Query " +
+                        "was not understood; no results available.").create();
                 dialog.show();
 
                 ret = false;
@@ -210,7 +221,8 @@ public class SolutionActivity extends ActionBarActivity {
                                 }
 
                                 if (hasText(imageUrl) || hasText(text)) {
-                                    WolframAlphaPod wolframAlphaPod = new WolframAlphaPod(text, bitmap);
+                                    WolframAlphaPod wolframAlphaPod = new WolframAlphaPod(text,
+                                            bitmap);
 
                                     children.add(wolframAlphaPod);
 
@@ -243,17 +255,20 @@ public class SolutionActivity extends ActionBarActivity {
         @Override
         protected void onPostExecute(Boolean success) {
             if (success) {
-                PodExpendableListAdapter ELAdapter = new PodExpendableListAdapter(SolutionActivity.this, podContent, podTitles);
+                PodExpendableListAdapter ELAdapter = new PodExpendableListAdapter
+                        (SolutionActivity.this, podContent, podTitles);
                 podExpandableListView.setAdapter(ELAdapter);
                 progressDialog.dismiss();
                 /*for (int i = 0; i < podTitles.size(); i++) {
                     String groupTitle = (String) ELAdapter.getGroup(i);
-                    if (groupTitle.toLowerCase().equals("solutions") || groupTitle.toLowerCase().equals("solution") || groupTitle.toLowerCase().equals("plot")) {
+                    if (groupTitle.toLowerCase().equals("solutions") || groupTitle.toLowerCase()
+                    .equals("solution") || groupTitle.toLowerCase().equals("plot")) {
                         podExpandableListView.expandGroup(i, true);
                     }
                 }*/
             } else {
-                alerDialogBuilder.setTitle("Error").setMessage("Somethign went wrong.").create().show();
+                alerDialogBuilder.setTitle("Error").setMessage("Somethign went wrong.").create()
+                        .show();
             }
         }
     }

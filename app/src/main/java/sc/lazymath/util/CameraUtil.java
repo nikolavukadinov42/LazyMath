@@ -3,6 +3,7 @@ package sc.lazymath.util;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
@@ -12,11 +13,13 @@ import android.view.View;
 import android.view.Window;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
+import android.widget.FrameLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import sc.lazymath.R;
+import sc.lazymath.activities.CameraActivity;
 import sc.lazymath.activities.HomeActivity;
 import sc.lazymath.views.CameraOverlay;
 
@@ -61,6 +64,19 @@ public class CameraUtil {
         camera.setParameters(params);
     }
 
+    public static void focusCamera(Camera camera, Rect rect){
+        Camera.Parameters params = camera.getParameters();
+
+        if (params.getMaxNumMeteringAreas() > 0){ // check that metering areas are supported
+            List<Camera.Area> meteringAreas = new ArrayList<Camera.Area>();
+
+            meteringAreas.add(new Camera.Area(rect, 1000)); // set weight to 100%
+            params.setMeteringAreas(meteringAreas);
+        }
+
+        camera.setParameters(params);
+    }
+
     public static void setFlashUsage(Camera camera, boolean useFlash) {
         Camera.Parameters params = camera.getParameters();
 
@@ -75,6 +91,9 @@ public class CameraUtil {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             }
         }
+
+        // set Camera parameters
+        camera.setParameters(params);
     }
 
     public static Camera getCameraInstance(Context context) {
@@ -347,5 +366,33 @@ public class CameraUtil {
                 resizeX ? nwPosition.x : (int) nwButton.getX(), resizeY ? nwPosition.y : (int)
                 nwButton.getY());
         nwButton.setLayoutParams(nwParams);
+    }
+
+    public static Rect getCropWindow(Activity activity, Bitmap bmp) {
+        Rect ret;
+
+        // crop image
+        Point pictureSize = new Point(bmp.getWidth(), bmp.getHeight());
+
+        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
+        Point screenSize = new Point(preview.getWidth(), preview.getHeight());
+
+        double scaleX = pictureSize.x / screenSize.x;
+        double scaleY = pictureSize.y / screenSize.y;
+
+        Button seButton = (Button) activity.findViewById(R.id.button_se);
+        Button nwButton = (Button) activity.findViewById(R.id.button_nw);
+
+        int minX = nwButton.getLeft();
+        int minY = nwButton.getTop();
+        int maxX = seButton.getRight();
+        int maxY = seButton.getBottom();
+
+        double left = minX * scaleX >= 0 ? minX * scaleX : 0;
+        double top = minY * scaleY >= 0 ? minY * scaleY : 0;
+        double right = maxX * scaleX <= pictureSize.x ? maxX * scaleX : pictureSize.x;
+        double bottom = maxY * scaleY <= pictureSize.y ? maxY * scaleY : pictureSize.y;
+
+        return new Rect(minX, minY, maxX, maxY);
     }
 }

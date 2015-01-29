@@ -1,8 +1,11 @@
 package sc.lazymath.ocr.imageprocessing;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.RectF;
 
 import java.io.File;
 import java.io.IOException;
@@ -648,6 +651,114 @@ public class ImageUtil {
                 for (int i = 0; i < dH; i++) {
                     for (int j = 0; j < dW; j++) {
                         ret[y * dH + i][x * dW + j] = cTile[i][j];
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    public static int[][] getScaledImage(int[][] bImage, int maxSize) {
+        Bitmap ret;
+        Bitmap resizedBitmap;
+        Bitmap imageToResize = ImageUtil.matrixToBitmap(bImage);
+
+        int outWidth;
+        int outHeight;
+        int inWidth = imageToResize.getWidth();
+        int inHeight = imageToResize.getHeight();
+
+        if(inWidth > inHeight){
+            outWidth = maxSize;
+            outHeight = (inHeight * maxSize) / inWidth;
+        } else {
+            outHeight = maxSize;
+            outWidth = (inWidth * maxSize) / inHeight;
+        }
+
+        resizedBitmap = Bitmap.createScaledBitmap(imageToResize, outWidth, outHeight, false);
+
+        ret = Bitmap.createBitmap(maxSize, maxSize, resizedBitmap.getConfig());
+
+        Canvas canvas = new Canvas(ret);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(resizedBitmap, 0, 0, null);
+
+        return ImageUtil.bitmapToMatrix(ret);
+    }
+
+    public static int[][] sauvola(int[][] image) {
+        int h = image.length;
+        int w = image[0].length;
+
+        int tileHeight = 40;
+        int tileWidth = 40;
+
+        int dH = (int) (Math.ceil(h / tileHeight));
+        int dW = (int) (Math.ceil(w / tileWidth));
+
+        int[][] ret = new int[h][w];
+
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                ret[i][j] = 255;
+            }
+        }
+
+        double k = 0.1;
+        double r = 128;
+        // hash for maps is y + x * 100
+        for (int y = 0; y < dH + 1; y++) {
+            for (int x = 0; x < dW + 1; x++) {
+                // calculate local mean
+                double mean = 0;
+                double stDev = 0;
+                int threshold;
+
+                int[][] tile = new int[tileHeight][tileWidth];
+                int[][] cTile = null;
+
+                for (int i = 0; i < tileHeight; i++) {
+                    for (int j = 0; j < tileWidth; j++) {
+                        if (y * tileHeight + i < h && x * tileWidth + j < w) {
+                            mean += image[y * tileHeight + i][x * tileWidth + j];
+                        }
+                    }
+                }
+
+                mean /= tileHeight * tileWidth;
+
+                // calculate local standard deviation
+                for (int i = 0; i < tileHeight; i++) {
+                    for (int j = 0; j < tileWidth; j++) {
+                        if (y * tileHeight + i < h && x * tileWidth + j < w) {
+                            stDev += Math.abs(mean - image[y * tileHeight + i][x * tileWidth + j]);
+                        }
+                    }
+                }
+
+                stDev /= tileHeight * tileWidth;
+
+                // calculate threshold
+                threshold = (int) (mean * (1 + k * (stDev / r - 1)));
+
+                // apply binarization
+                for (int i = 0; i < tileHeight; i++) {
+                    for (int j = 0; j < tileWidth; j++) {
+                        if (y * tileHeight + i < h && x * tileWidth + j < w) {
+                            tile[i][j] = image[y * tileHeight + i][x * tileWidth + j];
+                        }
+                    }
+                }
+
+                cTile = matrixToBinary(tile, threshold);
+
+                for (int i = 0; i < tileHeight; i++) {
+                    for (int j = 0; j < tileWidth; j++) {
+                        if (y * tileHeight + i < h && x * tileWidth + j < w) {
+                            ret[y * tileHeight + i][x * tileWidth + j] = cTile[i][j];
+                        }
                     }
                 }
             }
