@@ -68,15 +68,6 @@ public class OcrMath extends OcrTemplate {
 
         SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
-        Collections.sort(nodes, new Comparator<AbstractNode>() {
-            @Override
-            public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-                return (int) (firstNode.getMinX() - secondNode.getMinX());
-            }
-        });
-
-        SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
-
         this.formula.addNodes(nodes);
         System.out.println(this.formula);
     }

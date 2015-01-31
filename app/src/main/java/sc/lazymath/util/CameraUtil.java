@@ -10,7 +10,6 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
 import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -19,13 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sc.lazymath.R;
-import sc.lazymath.activities.CameraActivity;
 import sc.lazymath.activities.HomeActivity;
 import sc.lazymath.views.CameraOverlay;
 
 /**
  * Created by nikola42 on 12/27/2014.
  */
+@SuppressWarnings("ALL")
 public class CameraUtil {
 
     //    private static Point size;
@@ -42,9 +41,7 @@ public class CameraUtil {
         params.setRotation(90);
 
         // set focus mode to auto
-        if (params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-        } else {
+        if (params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         }
 
@@ -55,35 +52,54 @@ public class CameraUtil {
 
         // set flash mode on
         if (params.getSupportedFlashModes() != null) {
-            if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_ON)) {
-                params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+            if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
             }
         }
+
+        // set metering area
+        if (params.getMaxNumMeteringAreas() > 0) { // check that metering areas are supported
+            List<Camera.Area> meteringAreas = new ArrayList<>();
+
+            meteringAreas.add(new Camera.Area(new Rect(-350, -350, 350, 350),
+                    1000)); // set weight to 100%
+            params.setMeteringAreas(meteringAreas);
+        }
+
+        Camera.Size previewSize = params.getPreviewSize();
+        double previewRatio = (double) previewSize.height / previewSize.width;
+
+        List<Camera.Size> pictureSizes = params.getSupportedPictureSizes();
+        Camera.Size newPictureSize = null;
+
+        int max = Integer.MIN_VALUE;
+        for (Camera.Size pictureSize : pictureSizes) {
+            int size = pictureSize.height + pictureSize.width;
+            double ratio = (double) pictureSize.height / pictureSize.width;
+
+            if (size < 2500 && size > max && previewRatio - ratio < 0.1) {
+                newPictureSize = pictureSize;
+                max = size;
+            }
+        }
+
+        if (newPictureSize != null) {
+            params.setPictureSize(newPictureSize.width, newPictureSize.height);
+        }
+
+        Log.d("Picture size", newPictureSize.width + ", " + newPictureSize.height);
 
         // set Camera parameters
         camera.setParameters(params);
     }
 
-    public static void focusCamera(Camera camera, Rect rect){
+    public static void changeFlash(Camera camera) {
         Camera.Parameters params = camera.getParameters();
 
-        if (params.getMaxNumMeteringAreas() > 0){ // check that metering areas are supported
-            List<Camera.Area> meteringAreas = new ArrayList<Camera.Area>();
-
-            meteringAreas.add(new Camera.Area(rect, 1000)); // set weight to 100%
-            params.setMeteringAreas(meteringAreas);
-        }
-
-        camera.setParameters(params);
-    }
-
-    public static void setFlashUsage(Camera camera, boolean useFlash) {
-        Camera.Parameters params = camera.getParameters();
-
-        if (useFlash) {
+        if (params.getFlashMode() == Camera.Parameters.FLASH_MODE_OFF) {
             // enable flash
-            if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_ON)) {
-                params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+            if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
             }
         } else {
             // disable flash
@@ -368,6 +384,9 @@ public class CameraUtil {
         nwButton.setLayoutParams(nwParams);
     }
 
+    /**
+     * Get crop window rect in image coordinates.
+     */
     public static Rect getCropWindow(Activity activity, Bitmap bmp) {
         Rect ret;
 
@@ -377,8 +396,8 @@ public class CameraUtil {
         FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
         Point screenSize = new Point(preview.getWidth(), preview.getHeight());
 
-        double scaleX = pictureSize.x / screenSize.x;
-        double scaleY = pictureSize.y / screenSize.y;
+        double scaleX = (double) pictureSize.x / screenSize.x;
+        double scaleY = (double) pictureSize.y / screenSize.y;
 
         Button seButton = (Button) activity.findViewById(R.id.button_se);
         Button nwButton = (Button) activity.findViewById(R.id.button_nw);
@@ -393,6 +412,36 @@ public class CameraUtil {
         double right = maxX * scaleX <= pictureSize.x ? maxX * scaleX : pictureSize.x;
         double bottom = maxY * scaleY <= pictureSize.y ? maxY * scaleY : pictureSize.y;
 
-        return new Rect(minX, minY, maxX, maxY);
+        return new Rect((int) left, (int) top, (int) right, (int) bottom);
+    }
+
+    public static void setMeteringArea(Camera camera, Rect rect) {
+        Camera.Parameters params = camera.getParameters();
+
+        if (params.getMaxNumMeteringAreas() > 0) { // check that metering areas are supported
+            List<Camera.Area> meteringAreas = new ArrayList<>();
+
+            meteringAreas.add(new Camera.Area(rect, 1000)); // set weight to 100%
+            params.setMeteringAreas(meteringAreas);
+        }
+
+        camera.setParameters(params);
+    }
+
+    public static Rect transformToMeteringArea(Activity activity) {
+        Button seButton = (Button) activity.findViewById(R.id.button_se);
+        Button nwButton = (Button) activity.findViewById(R.id.button_nw);
+
+        int left = nwButton.getLeft();
+        int top = nwButton.getTop();
+        int right = seButton.getRight();
+        int bottom = seButton.getBottom();
+
+        FrameLayout preview = (FrameLayout) activity.findViewById(R.id.camera_preview);
+
+        int x = (int) (2000 * ((double) (right - left) / preview.getWidth()) / 2);
+        int y = (int) (2000 * ((double) (bottom - top) / preview.getHeight()) / 2);
+
+        return new Rect(-x, -y - 100, x, y - 100);
     }
 }

@@ -1,10 +1,12 @@
 package sc.lazymath.activities;
 
 import android.content.Intent;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,7 +30,7 @@ import sc.lazymath.views.CameraView;
 
 public class CameraActivity extends ActionBarActivity {
 
-    private static Camera camera = null;
+    private Camera camera = null;
     private CameraView cameraView;
 
     private boolean startingIntent = false;
@@ -58,16 +60,6 @@ public class CameraActivity extends ActionBarActivity {
 
         final CameraOverlay overlay = new CameraOverlay(this.getApplicationContext());
         preview.addView(overlay, 1, params);
-
-        Button captureButton = (Button) findViewById(R.id.button_capture);
-        captureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                Rect rect = CameraUtil.getCropWindow(CameraActivity.this);
-//                CameraUtil.focusCamera(camera, rect);
-                camera.autoFocus(autoFocusCallback);
-            }
-        });
 
         final AbsoluteLayout window = (AbsoluteLayout) this.findViewById(R.id.camera_window);
         ViewTreeObserver vto = window.getViewTreeObserver();
@@ -101,23 +93,6 @@ public class CameraActivity extends ActionBarActivity {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
-                return true;
-            case R.id.action_settings:
-                return true;
-            case R.id.menu_flash:
-                item.setChecked(!item.isChecked());
-                CameraUtil.setFlashUsage(camera, item.isChecked());
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     protected void onResume() {
         if (camera == null) {
             camera = CameraUtil.getCameraInstance(getApplicationContext());
@@ -136,13 +111,6 @@ public class CameraActivity extends ActionBarActivity {
 
         super.onPause();
     }
-
-    Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
-        @Override
-        public void onAutoFocus(boolean success, Camera camera) {
-            camera.takePicture(null, null, pictureCallback);
-        }
-    };
 
     private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
@@ -192,6 +160,22 @@ public class CameraActivity extends ActionBarActivity {
         return neuralNetworks;
     }
 
+    public void cameraCapture(View view){
+//        Rect rect = CameraUtil.transformToMeteringArea(CameraActivity.this);
+//        Log.d("Metering rect", rect.toString());
+//
+//        CameraUtil.setMeteringArea(camera, rect);
+        //                camera.autoFocus(autoFocusCallback);
 
+        camera.takePicture(null, null, pictureCallback);
+    }
+
+    public void cameraAutofocus(View view){
+        this.camera.autoFocus(null);
+    }
+
+    public void cameraFlash(View view){
+        CameraUtil.changeFlash(camera);
+    }
 }
 
