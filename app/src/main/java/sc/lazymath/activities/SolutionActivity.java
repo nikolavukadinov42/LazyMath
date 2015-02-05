@@ -118,6 +118,12 @@ public class SolutionActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onBackPressed() {
+        Log.d("LazyMath", "BACK PRESSED");
+        NavUtils.navigateUpFromSameTask(this);
+    }
+
     /**
      * @param view
      */

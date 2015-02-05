@@ -14,174 +14,183 @@ import sc.lazymath.ocr.math.AbstractNode;
  */
 public class SimpleNode extends AbstractNode {
 
-	protected List<AbstractNode> exponent = new ArrayList<AbstractNode>();
-	private SimpleNode index;
+    protected List<AbstractNode> exponent = new ArrayList<AbstractNode>();
+    private List<SimpleNode> indexes = new ArrayList<SimpleNode>();
 
-	public SimpleNode(RasterRegion region) {
-		this.region = region;
+    public SimpleNode(RasterRegion region) {
+        this.region = region;
 
-		this.exponent = new ArrayList<>();
-	}
+        this.exponent = new ArrayList<>();
+    }
 
-	@Override
-	public List<RasterRegion> getRasterRegions() {
-		List<RasterRegion> ret = new ArrayList<>();
+    @Override
+    public List<RasterRegion> getRasterRegions() {
+        List<RasterRegion> ret = new ArrayList<>();
 
-		ret.add(this.region);
+        ret.add(this.region);
 
-		for (AbstractNode node : this.exponent) {
-			ret.addAll(node.getRasterRegions());
-		}
+        for (AbstractNode node : this.exponent) {
+            ret.addAll(node.getRasterRegions());
+        }
 
-		return ret;
-	}
+        return ret;
+    }
 
-	@Override
-	public List<SimpleNode> getDefaultNodes() {
-		List<SimpleNode> defaultNodes = new ArrayList<SimpleNode>();
-		if (this.region != null) {
-			defaultNodes.add(this);
-		}
-		return defaultNodes;
-	}
+    @Override
+    public List<SimpleNode> getDefaultNodes() {
+        List<SimpleNode> defaultNodes = new ArrayList<SimpleNode>();
+        if (this.region != null) {
+            defaultNodes.add(this);
+        }
+        return defaultNodes;
+    }
 
-	@Override
-	public Point getCenter() {
-		double x = 0;
-		double y = 0;
+    @Override
+    public Point getCenter() {
+        double x = 0;
+        double y = 0;
 
-		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
-		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+        x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+        y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
 
-		for (AbstractNode node : this.exponent) {
-			Point center = node.getCenter();
+        for (AbstractNode node : this.exponent) {
+            Point center = node.getCenter();
 
-			x += center.x;
-			y += center.y;
-		}
+            x += center.x;
+            y += center.y;
+        }
 
-		return new Point((int) (x / (this.exponent.size() + 1)),
-				(int) (y / (this.exponent.size() + 1)));
-	}
+        return new Point((int) (x / (this.exponent.size() + 1)),
+                (int) (y / (this.exponent.size() + 1)));
+    }
 
-	@Override
-	public Point getCenterWithoutExponents() {
-		double x = 0;
-		double y = 0;
+    @Override
+    public Point getCenterWithoutExponents() {
+        double x = 0;
+        double y = 0;
 
-		x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
-		y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
+        x += this.region.minX + (this.region.maxX - this.region.minX) / 2;
+        y += this.region.minY + (this.region.maxY - this.region.minY) / 2;
 
-		return new Point((int) x, (int) y);
-	}
+        return new Point((int) x, (int) y);
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
 
-		sb.append(this.region.tag);
+        sb.append(this.region.tag);
 
-		if (this.index != null) {
-			sb.append("_(" + this.index.getRasterRegion().tag + ")");
-		}
+        if (this.indexes.size() > 0) {
+            sb.append("_(");
+        }
 
-		if (this.exponent.size() > 0) {
-			sb.append("^(");
-		}
+        for (AbstractNode abstractNode : this.indexes) {
+            sb.append(abstractNode);
+        }
 
-		for (AbstractNode abstractNode : this.exponent) {
-			sb.append(abstractNode);
-		}
+        if (this.indexes.size() > 0) {
+            sb.append(")");
+        }
 
-		if (this.exponent.size() > 0) {
-			sb.append(")");
-		}
 
-		return sb.toString();
-	}
+        if (this.exponent.size() > 0) {
+            sb.append("^(");
+        }
 
-	public AbstractNode getExponent(RasterRegion region) {
-		for (AbstractNode abstractNode : this.exponent) {
-			if (abstractNode.getRasterRegion() == region) {
-				return abstractNode;
-			}
-		}
+        for (AbstractNode abstractNode : this.exponent) {
+            sb.append(abstractNode);
+        }
 
-		return null;
-	}
+        if (this.exponent.size() > 0) {
+            sb.append(")");
+        }
 
-	public List<AbstractNode> getExponents() {
-		return this.exponent;
-	}
+        return sb.toString();
+    }
 
-	public List<RasterRegion> getExponentsRegions() {
-		List<RasterRegion> regions = new ArrayList<RasterRegion>();
-		for (AbstractNode node : this.exponent) {
-			regions.add(node.getRasterRegion());
-		}
-		return regions;
-	}
+    public AbstractNode getExponent(RasterRegion region) {
+        for (AbstractNode abstractNode : this.exponent) {
+            if (abstractNode.getRasterRegion() == region) {
+                return abstractNode;
+            }
+        }
 
-	public void addExponent(AbstractNode exponent) {
-		this.exponent.add(exponent);
-	}
+        return null;
+    }
 
-	public void removeExponent(AbstractNode exponent) {
-		this.exponent.remove(exponent);
-	}
+    public List<AbstractNode> getExponents() {
+        return this.exponent;
+    }
 
-	public void setExponent(List<AbstractNode> exponent) {
-		this.exponent = exponent;
-	}
+    public List<RasterRegion> getExponentsRegions() {
+        List<RasterRegion> regions = new ArrayList<RasterRegion>();
+        for (AbstractNode node : this.exponent) {
+            regions.add(node.getRasterRegion());
+        }
+        return regions;
+    }
 
-	public void removeExponents(List<AbstractNode> exponents) {
-		this.exponent.removeAll(exponents);
-	}
+    public void addExponent(AbstractNode exponent) {
+        this.exponent.add(exponent);
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == null) {
-			return false;
-		}
-		if (obj == this) {
-			return true;
-		}
-		if (!(obj instanceof SimpleNode)) {
-			return false;
-		}
-		SimpleNode node = (SimpleNode) obj;
-		if (node.getRasterRegion().equals(this.region)) {
-			return true;
-		}
-		return false;
-	}
+    public void removeExponent(AbstractNode exponent) {
+        this.exponent.remove(exponent);
+    }
 
-	@Override
-	public int hashCode() {
-		// TODO Auto-generated method stub
-		return this.region.hashCode();
-	}
+    public void setExponent(List<AbstractNode> exponent) {
+        this.exponent = exponent;
+    }
 
-	@Override
-	public double getMinY() {
-		return this.region.minY;
-	}
+    public void removeExponents(List<AbstractNode> exponents) {
+        this.exponent.removeAll(exponents);
+    }
 
-	@Override
-	public double getMaxY() {
-		return this.region.maxY;
-	}
+    public void removeIndexes(List<AbstractNode> indexes) {
+        this.indexes.removeAll(indexes);
+    }
 
-	public void addIndex(SimpleNode index) {
-		this.index = index;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof SimpleNode)) {
+            return false;
+        }
+        SimpleNode node = (SimpleNode) obj;
+        if (node.getRasterRegion().equals(this.region)) {
+            return true;
+        }
+        return false;
+    }
 
-	public SimpleNode getIndex() {
-		return this.index;
-	}
+    @Override
+    public int hashCode() {
+        // TODO Auto-generated method stub
+        return this.region.hashCode();
+    }
 
-	public void setIndex(SimpleNode index) {
-		this.index = index;
-	}
+    @Override
+    public double getMinY() {
+        return this.region.minY;
+    }
+
+    @Override
+    public double getMaxY() {
+        return this.region.maxY;
+    }
+
+    public void addIndex(SimpleNode index) {
+        this.indexes.add(index);
+    }
+
+    public List<SimpleNode> getIndex() {
+        return this.indexes;
+    }
 
 }

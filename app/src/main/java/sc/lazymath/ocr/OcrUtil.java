@@ -51,11 +51,17 @@ public class OcrUtil {
 
     public static List<NeuralNetwork> trainNeuralNetworks(Activity activity) {
         List<NeuralNetwork> neuralNetworks = new ArrayList<NeuralNetwork>();
-        String[] paths = new String[]{"./res/ts.png", "./res/tsH.png", "./res/tsVerdana.png"};
-        String chars = "0123456789abcdxyz+-/*±()";
+
+//        String[] paths = new String[] { "./res/ts/tss.png" };
+//		String[] paths = new String[] { "./res/ts/ts-computer-modern.png", "./res/ts/ts-latin-modern.png", "./res/ts/ts-verdana.png" };
+        String chars = "1234567890-+/*=abcdesintanlogRxyijkIJcvu()fgD";
+
+        String[] paths = new String[]{"./res/v.png", "./res/h.png", "./res/lm.png"};
+//        String chars = "0123456789abcdxyz+-/*±()";
 
         Bitmap image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts1);
         List<RasterRegion> regions = OcrUtil.getRegions(image);
+        OcrMath.mergeRegions(regions);
         NeuralNetwork nn1 = new NeuralNetwork(regions, chars);
         neuralNetworks.add(nn1);
 

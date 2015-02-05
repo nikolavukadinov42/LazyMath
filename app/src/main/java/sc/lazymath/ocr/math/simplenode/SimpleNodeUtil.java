@@ -57,9 +57,6 @@ public class SimpleNodeUtil {
 	 * x^(2+y^(a^b)) -> x^(2+yab) // first itteration -> x^(2+y^(ab)) // second
 	 * -> x^(2+y^(a^b)) // third
 	 *
-	 * @param regions
-	 * @param nodes
-	 * @param parent
 	 */
 	public static List<AbstractNode> getExponents(List<AbstractNode> nodes, SimpleNode parent,
 			List<AbstractNode> processed) {
@@ -89,11 +86,14 @@ public class SimpleNodeUtil {
 	public static void processSimpleNodes(SimpleNode base, int index, List<AbstractNode> nodes,
 			SimpleNode parent) {
 		List<AbstractNode> toProcess = new ArrayList<AbstractNode>();
+        boolean indexes = false;
+
 		for (int j = index + 1; j < nodes.size(); j++) {
 			if (nodes.get(j) instanceof SimpleNode && isDownRight(base, (SimpleNode) nodes.get(j))) {
 				base.addIndex((SimpleNode) nodes.get(j));
 				toProcess.add(nodes.get(j));
 				toRemoveExp.add(nodes.get(j));
+                indexes = true;
 				break;
 			} else if (isUpperRight(base, nodes.get(j))) {
 				toProcess.add(nodes.get(j));
@@ -105,7 +105,11 @@ public class SimpleNodeUtil {
 		}
 		if (toProcess.size() > 0) {
 			if (parent != null) {
-				parent.removeExponents(toProcess);
+                if (indexes) {
+                    parent.removeIndexes(toProcess);
+                } else {
+                    parent.removeExponents(toProcess);
+                }
 			}
 			processed.add(base);
 			nodes.removeAll(toProcess);

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import sc.lazymath.ocr.imageprocessing.ImageUtil;
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
@@ -54,6 +56,8 @@ public class OcrMath extends OcrTemplate {
     protected void processRegions(List<RasterRegion> regions) {
         this.formula = new Formula();
 
+        mergeRegions(regions);
+
         List<AbstractNode> nodes = new ArrayList<>();
         nodes.addAll(FractionUtil.getFractionNodes(regions));
         nodes.addAll(RootUtil.getNthRootNodes(regions, nodes));
@@ -69,7 +73,6 @@ public class OcrMath extends OcrTemplate {
         SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
         this.formula.addNodes(nodes);
-        System.out.println(this.formula);
     }
 
     @Override
@@ -78,7 +81,57 @@ public class OcrMath extends OcrTemplate {
             this.setNodeCharacter(node);
         }
 
-        return this.formula.toString();
+        return parseFormulaString(this.formula.toString());
+        // return this.formula.toString();
+    }
+
+    private String parseFormulaString(String input) {
+        String out = input;
+        out = out.replaceAll("\\p{Blank}", "");
+        out = parseIntegral(out);
+        System.out.println(out);
+        out = parseIndexes(out);
+        return out;
+    }
+
+    private String parseIntegral(String input) {
+        String newInput = input.replaceAll("R", "integrate ");
+        if (!newInput.equals(input)) {
+            newInput = newInput.replaceAll("d\\p{Lower}", "");
+        }
+        return newInput;
+    }
+
+    private String parseIndexes(String input) {
+        String out = input;
+        out = out.replaceAll("l_\\(og(.*?)", "log(");
+        if (out == input) {
+            out = out.replaceAll("l_\\(og\\)", "log");
+        }
+
+        System.out.println(out);
+
+        Pattern pattern = Pattern.compile("_\\((.*?)\\)");
+        Matcher matcher = pattern.matcher(out);
+        while (matcher.find()) {
+            System.out.print("Start index: " + matcher.start());
+            System.out.print(" End index: " + matcher.end() + " ");
+            System.out.println(matcher.group());
+            out = out.replaceFirst("_\\((.*?)\\)", matcher.group(1));
+        }
+
+        out = out.replaceAll("\\(og", "log");
+
+        pattern = Pattern.compile("log\\(\\)");
+        matcher = pattern.matcher(out);
+        if(matcher.find()) {
+            out = out.replaceAll("log\\(\\)", "log");
+        } else {
+            out = out.replaceAll("log\\(", "log_(");
+        }
+
+
+        return out;
     }
 
     private void setNodeCharacter(AbstractNode node) {
@@ -92,16 +145,8 @@ public class OcrMath extends OcrTemplate {
                     this.setNodeCharacter(abstractNode);
                 }
 
-                if (simpleNode.getIndex() != null) {
-                    this.setNodeCharacter(simpleNode.getIndex());
-                }
-
-                for (AbstractNode abstractNode : simpleNode.getExponents()) {
-                    this.setNodeCharacter(abstractNode);
-                }
-
-                if (simpleNode.getIndex() != null) {
-                    this.setNodeCharacter(simpleNode.getIndex());
+                for (SimpleNode index : simpleNode.getIndex()) {
+                    this.setNodeCharacter(index);
                 }
 
                 // recognize node - get its character
@@ -143,6 +188,46 @@ public class OcrMath extends OcrTemplate {
                     this.setNodeCharacter(n);
                 }
             }
+        }
+    }
+
+    public static void mergeRegions(List<RasterRegion> regions) {
+        List<RasterRegion> toRemove = new ArrayList<RasterRegion>();
+
+        for (RasterRegion regionFirst : regions) {
+            for (RasterRegion regionSecond : regions) {
+                if (regionFirst != regionSecond && !(toRemove.contains(regionFirst) || toRemove.contains(regionSecond))) {
+                    concatAbove(regionFirst, regionSecond, toRemove);
+                    concatEquals(regionFirst, regionSecond, toRemove);
+                }
+            }
+        }
+        regions.removeAll(toRemove);
+    }
+
+    private static void concatAbove(RasterRegion regionFirst, RasterRegion regionSecond, List<RasterRegion> toRemove) {
+        double topDistance = regionFirst.minY - regionSecond.maxY;
+        double smallerHeight = regionSecond.maxY - regionSecond.minY;
+        double biggerHeight = regionFirst.maxY - regionFirst.minY;
+        double biggerWidth = regionFirst.maxX - regionFirst.minX;
+        double smallerWidth = regionSecond.maxX - regionSecond.minX;
+
+        if (topDistance > 0 && topDistance < biggerHeight * 0.7 && smallerHeight < biggerHeight / 5 && smallerWidth < biggerWidth * 0.6
+                && isBetweenXRegion(regionFirst, regionSecond, biggerWidth * 0.7)) {
+            regionFirst.points.addAll(regionSecond.points);
+            toRemove.add(regionSecond);
+        }
+    }
+
+    private static boolean isBetweenXRegion(RasterRegion regionFirst, RasterRegion regionSecond, double tolerance) {
+        return regionSecond.minX - tolerance >= (regionFirst.minX - tolerance) && regionSecond.maxX <= (regionFirst.maxX + tolerance);
+    }
+
+    private static void concatEquals(RasterRegion regionFirst, RasterRegion regionSecond, List<RasterRegion> toRemove) {
+        if (regionFirst.points.size() == regionSecond.points.size() && regionFirst.minX == regionSecond.minX
+                && regionSecond.maxX == regionFirst.maxX) {
+            regionFirst.points.addAll(regionSecond.points);
+            toRemove.add(regionSecond);
         }
     }
 
