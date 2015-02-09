@@ -36,7 +36,7 @@ public class RasterRegion {
 	public double majorAxisLength = 0;
 	public double minorAxisLength = 0;
 
-	public Object tag;
+	public String tag;
 
 	@Override
 	public String toString() {
@@ -158,11 +158,11 @@ public class RasterRegion {
 	}
 
 	public double getWidth() {
-		return 0;
+		return this.maxX - this.minX;
 	}
 
 	public double getHeight() {
-		return 0;
+		return this.maxY - this.minY;
 	}
 
 	public static class RegionComparer implements Comparator<RasterRegion> {

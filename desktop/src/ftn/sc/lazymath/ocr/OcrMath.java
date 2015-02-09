@@ -67,14 +67,9 @@ public class OcrMath extends OcrTemplate {
 		nodes.addAll(RootUtil.getNthRootNodes(regions, nodes));
 		nodes.addAll(SimpleNodeUtil.getSimpleNodes(regions));
 
-		Collections.sort(nodes, new Comparator<AbstractNode>() {
-			@Override
-			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-				return (int) (firstNode.getMinX() - secondNode.getMinX());
-			}
-		});
-
-		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
+		for (AbstractNode node : nodes) {
+			this.setNodeCharacter(node);
+		}
 
 		Collections.sort(nodes, new Comparator<AbstractNode>() {
 			@Override
@@ -84,17 +79,21 @@ public class OcrMath extends OcrTemplate {
 		});
 
 		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
+
+//		Collections.sort(nodes, new Comparator<AbstractNode>() {
+//			@Override
+//			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
+//				return (int) (firstNode.getMinX() - secondNode.getMinX());
+//			}
+//		});
+//
+//		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
 		this.formula.addNodes(nodes);
-		System.out.println(this.formula);
 	}
 
 	@Override
 	public String recognize() {
-		for (AbstractNode node : this.formula.getNodes()) {
-			this.setNodeCharacter(node);
-		}
-
 		return this.formula.toString();
 	}
 
@@ -161,6 +160,121 @@ public class OcrMath extends OcrTemplate {
 				}
 			}
 		}
+	}
+
+	public static void mergeRegions(List<RasterRegion> regions) {
+		List<RasterRegion> toRemove = new ArrayList<RasterRegion>();
+
+		for (RasterRegion regionFirst : regions) {
+			for (RasterRegion regionSecond : regions) {
+				if (regionFirst != regionSecond
+						&& !(toRemove.contains(regionFirst) || toRemove.contains(regionSecond))) {
+					concatAboveBelow(regionFirst, regionSecond, toRemove);
+					concatEquals(regionFirst, regionSecond, toRemove);
+				}
+			}
+		}
+
+		regions.removeAll(toRemove);
+	}
+
+	private static void concatAboveBelow(RasterRegion regionFirst, RasterRegion regionSecond,
+			List<RasterRegion> toRemove) {
+		double topDistance = regionFirst.minY - regionSecond.maxY;
+		double bottomDistance = regionSecond.minY - regionFirst.maxY;
+		double firstHeight = regionFirst.maxY - regionFirst.minY;
+		double firstWidth = regionFirst.maxX - regionFirst.minX;
+		double secondHeight = regionSecond.maxY - regionSecond.minY;
+		double secondWidth = regionSecond.maxX - regionSecond.minX;
+
+		if (secondHeight < firstHeight * 0.2 && secondWidth < firstWidth * 1.2
+				&& Math.abs(regionFirst.xM - regionSecond.xM) < firstWidth * 1.5) {
+			if ((topDistance > 0 && topDistance < firstHeight * 0.5)
+					|| (bottomDistance > 0 && bottomDistance < firstHeight * 0.5)) {
+				regionFirst.points.addAll(regionSecond.points);
+				toRemove.add(regionSecond);
+			}
+		}
+	}
+
+	private static boolean isBetweenXRegion(RasterRegion regionFirst, RasterRegion regionSecond,
+			double tolerance) {
+		return regionSecond.minX > regionFirst.minX - tolerance
+				&& regionSecond.maxX < regionFirst.maxX + tolerance;
+	}
+
+	private static void concatEquals(RasterRegion regionFirst, RasterRegion regionSecond,
+			List<RasterRegion> toRemove) {
+		if (FractionUtil.isFractionLineOrMinus(regionFirst)
+				&& FractionUtil.isFractionLineOrMinus(regionSecond)) {
+			double firstWidth = regionFirst.maxX - regionFirst.minX;
+			double secondWidth = regionSecond.maxX - regionSecond.minX;
+
+			if (Math.abs(firstWidth - secondWidth) < firstWidth * 0.2
+					&& Math.abs(regionFirst.xM - regionSecond.xM) < firstWidth * 0.25
+					&& Math.abs(regionFirst.yM - regionSecond.yM) < firstWidth * 0.33) {
+
+				regionFirst.points.addAll(regionSecond.points);
+				toRemove.add(regionSecond);
+			}
+		}
+	}
+
+	public static boolean isIndex(RasterRegion left, RasterRegion right) {
+		boolean ret = false;
+
+		String leftChar = left.tag;
+		String rightChar = right.tag;
+
+		if (isHighChar(leftChar)) {
+			if (isLowChar(rightChar)) {
+				if (left.maxY - left.getHeight() / 3 < right.minY) {
+					ret = true;
+				}
+			} else if (isHighChar(rightChar) || isNormalChar(rightChar)) {
+				if (left.maxY + left.getHeight() / 6 < right.maxY) {
+					ret = true;
+				}
+			}
+		} else if (isLowChar(leftChar)) {
+			if (isHighChar(rightChar)) {
+				if (left.minY < right.minY) {
+					ret = true;
+				}
+			} else if (isLowChar(rightChar) || isNormalChar(rightChar)) {
+				if (left.minY + left.getHeight() / 3 < right.minY) {
+					ret = true;
+				}
+			}
+		} else {
+			if (isLowChar(rightChar)) {
+				if (left.minY + left.getHeight() / 3 < right.minY) {
+					ret = true;
+				}
+			} else if (isHighChar(rightChar) || isNormalChar(rightChar)) {
+				if (left.maxY + left.getHeight() / 6 < right.maxY) {
+					ret = true;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	public static boolean isHighChar(String c) {
+		return "bdhikltβδθ0123456789".contains(c);
+	}
+
+	public static boolean isNormalChar(String c) {
+		return "acemnorsuvwxzα".contains(c);
+	}
+
+	public static boolean isLowChar(String c) {
+		return "gjpqyγ".contains(c);
+	}
+
+	public static boolean isIndexable(String c) {
+		return !"0123456789+-*/=∫()[]{}±!'".contains(c);
 	}
 
 	public String getInputString() {

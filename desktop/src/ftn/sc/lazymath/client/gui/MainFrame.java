@@ -91,10 +91,10 @@ public class MainFrame extends JFrame implements ActionListener {
 	private JButton btnReset;
 
 	// private String imageFileName = "test1.png";
-	// public static final String DEFAULT_INPUT = "�/x/ka+x112+21*531";
+	// public static final String DEFAULT_INPUT = "±/x/ka+x112+21*531";
 
 	// private String imageFileName = "razlomak1.png";
-	// public static final String DEFAULT_INPUT = "/-b�k2ba2-4ac";
+	// public static final String DEFAULT_INPUT = "/-b±k2ba2-4ac";
 
 	// private String imageFileName = "sqrt-exp.png";
 	// public static final String DEFAULT_INPUT = "5-xy+kea+1+c";
@@ -161,8 +161,6 @@ public class MainFrame extends JFrame implements ActionListener {
 		this.setVisible(true);
 
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-		this.buttonTrain.doClick();
 	}
 
 	@Override
@@ -206,8 +204,6 @@ public class MainFrame extends JFrame implements ActionListener {
 			}
 		} else if (e.getSource() == this.buttonTrain) {
 			this.ocrMath = new OcrMath(this.trainNeuralNetworks());
-
-			this.imagePanel.setImage("./res/download.jpg");
 		} else if (e.getSource() == this.buttonProcess) {
 			if (this.ocrMath != null) {
 				int[][] image = OcrUtil.convertImageToMatrix((BufferedImage) this.imagePanel
@@ -234,12 +230,40 @@ public class MainFrame extends JFrame implements ActionListener {
 
 	private List<NeuralNetwork> trainNeuralNetworks() {
 		List<NeuralNetwork> neuralNetworks = new ArrayList<NeuralNetwork>();
-		String[] paths = new String[] { "./res/ts.png", "./res/tsH.png", "./res/tsVerdana.png" };
-		String chars = "0123456789abcdxyz+-/*�()";
+		String[] paths = new String[] { /* "./res/tsComputerModern.png", */"./res/tsLatinModern.png" };
+		String chars = "0123456789abcdefghijklmnopqrstuvwxyzαβγδθ+-*/=∫()[]{}±!'";
 
 		try {
 			for (String path : paths) {
 				BufferedImage img = ImageIO.read(new File(path));
+
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil.matrixToBinary(
+						ImageUtil.bitmapToMatrix(img), 254));
+
+				this.imagePanel.setImage(bitmap);
+
+				List<RasterRegion> regions = OcrUtil.getRegions(img);
+
+				NeuralNetwork nn = new NeuralNetwork(regions, chars);
+
+				neuralNetworks.add(nn);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		paths = new String[] { /* "./res/tsComputerModern2.png", */"./res/tsLatinModern2.png" };
+		chars = "arcosintegxplmud";
+
+		try {
+			for (String path : paths) {
+				BufferedImage img = ImageIO.read(new File(path));
+
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil.matrixToBinary(
+						ImageUtil.bitmapToMatrix(img), 254));
+
+				this.imagePanel.setImage(bitmap);
+
 				List<RasterRegion> regions = OcrUtil.getRegions(img);
 
 				NeuralNetwork nn = new NeuralNetwork(regions, chars);

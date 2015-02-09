@@ -3,9 +3,7 @@ package ftn.sc.lazymath.ocr;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
@@ -14,12 +12,6 @@ import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
  * Created by nikola42 on 12/28/2014.
  */
 public class OcrUtil {
-
-	public static List<RasterRegion> regions = new ArrayList<RasterRegion>();
-	public static boolean isBinaryMatrix;
-	public static int[][] image;
-	public static Map<String, Integer> alfabet = new HashMap<String, Integer>();
-	public static Map<Integer, String> alfabetInv = new HashMap<Integer, String>();
 
 	public static BufferedImage convertImage(BufferedImage bitmap) {
 		int[][] image = convertImageToMatrix(bitmap);
@@ -32,7 +24,7 @@ public class OcrUtil {
 	public static int[][] convertImageToMatrix(BufferedImage bitmap) {
 		int[][] image = ImageUtil.bitmapToMatrix(bitmap);
 
-		image = ImageUtil.christiansMethod(image);
+		image = ImageUtil.christian(image);
 
 		return image;
 	}
@@ -56,28 +48,38 @@ public class OcrUtil {
 			rasterRegion.determineMoments();
 		}
 
+		OcrMath.mergeRegions(regions);
+
 		Collections.sort(regions, new RasterRegion.RegionComparer());
 
 		return regions;
 	}
 
 	public static List<RasterRegion> getRegions(int[][] image) {
-		List<RasterRegion> regions = null;
+		List<RasterRegion> regions;
+
+		int h = image.length;
+		int w = image[0].length;
 
 		regions = ImageUtil.regionLabeling(image);
-
-		List<RasterRegion> filtered = new ArrayList<RasterRegion>();
-		for (RasterRegion rasterRegion : regions) {
-			if (!(rasterRegion.points.size() < 20)) {
-				filtered.add(rasterRegion);
-			}
-		}
-
-		regions = filtered;
 
 		for (RasterRegion rasterRegion : regions) {
 			rasterRegion.determineMoments();
 		}
+
+		List<RasterRegion> discarded = new ArrayList<RasterRegion>();
+		for (RasterRegion rasterRegion : regions) {
+			if (rasterRegion.points.size() < 20) {
+				discarded.add(rasterRegion);
+			}
+
+			if (rasterRegion.minX == 0 || rasterRegion.maxX == w - 1 || rasterRegion.minY == 0
+					|| rasterRegion.maxY == h - 1) {
+				discarded.add(rasterRegion);
+			}
+		}
+
+		regions.removeAll(discarded);
 
 		Collections.sort(regions, new RasterRegion.RegionComparer());
 
