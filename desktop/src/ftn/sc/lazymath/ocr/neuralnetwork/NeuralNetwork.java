@@ -12,8 +12,10 @@ public class NeuralNetwork {
 	public BackPropagation backPropagation;
 	public Map<String, Integer> alphabet = new HashMap<String, Integer>();
 	public Map<Integer, String> alphabetInverse = new HashMap<Integer, String>();
+	
+	private double handicap = 0;
 
-	public NeuralNetwork(List<RasterRegion> regions, String input) {
+	public NeuralNetwork(List<RasterRegion> regions, String input, double handicap) {
 		this.tagRegions(regions, input);
 		this.createAlphabets(regions, input);
 		double[][][] trainingSet = this.createTrainingSet(regions, input);

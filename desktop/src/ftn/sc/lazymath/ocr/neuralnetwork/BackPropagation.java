@@ -14,7 +14,7 @@ public class BackPropagation {
 	private int layersNum = 3;
 	private int samplesNum = 4;
 	private int maxIterations = 100000;
-	private double maxError = 0.00005;
+	public static double MAX_ERROR = 0.0005;
 	private int attemptsNum = 100;
 
 	public NeuralNetworkLayer[] layers = new NeuralNetworkLayer[this.layersNum];
@@ -30,7 +30,8 @@ public class BackPropagation {
 	// TODO greska nm
 	private int outputNum = 17;
 
-	public BackPropagation(int samplesNum, int outputNum, double[][][] trainingSet) {
+	public BackPropagation(int samplesNum, int outputNum,
+			double[][][] trainingSet) {
 		this.outputNum = outputNum;
 		this.samplesNum = samplesNum;
 		this.trainingSet = trainingSet;
@@ -45,7 +46,7 @@ public class BackPropagation {
 		this.ni = 0.05;
 		this.beta = 0.5;
 		this.layers[0].n = 64;
-		this.layers[1].n = 50;
+		this.layers[1].n = (int) (this.outputNum * 1.5);
 		this.layers[2].n = this.outputNum;
 	}
 
@@ -87,7 +88,8 @@ public class BackPropagation {
 			for (int v = 0; v < this.layers[s].n; v++) {
 				net = this.layers[s].bias[v];
 				for (int u = 0; u < this.layers[s - 1].n; u++) {
-					net += this.layers[s - 1].output[u] * this.weights[s - 1][u][v];
+					net += this.layers[s - 1].output[u]
+							* this.weights[s - 1][u][v];
 				}
 				this.layers[s].output[v] = this.sigmoid(net);
 			}
@@ -116,7 +118,8 @@ public class BackPropagation {
 			for (int u = 0; u < this.layers[s].n; u++) {
 				double sigmaa = 0.0;
 				for (int v = 0; v < this.layers[s + 1].n; v++) {
-					sigmaa += this.layers[s + 1].delta[v] * this.weights[s][u][v];
+					sigmaa += this.layers[s + 1].delta[v]
+							* this.weights[s][u][v];
 				}
 				double f = this.layers[s].output[u];
 				this.layers[s].delta[u] = f * (1 - f) * sigmaa;
@@ -130,12 +133,15 @@ public class BackPropagation {
 		for (int s = 0; s < this.layersNum - 1; s++) {
 			for (int v = 0; v < this.layers[s + 1].n; v++) {
 				for (int u = 0; u < this.layers[s].n; u++) {
-					this.weightChanges[s][u][v] = this.ni * this.layers[s + 1].delta[v]
-							* this.layers[s].output[u] + this.beta * this.weightChanges[s][u][v];
+					this.weightChanges[s][u][v] = this.ni
+							* this.layers[s + 1].delta[v]
+							* this.layers[s].output[u] + this.beta
+							* this.weightChanges[s][u][v];
 					this.weights[s][u][v] += this.weightChanges[s][u][v];
 				}
 
-				this.layers[s + 1].biasp[v] = this.ni * this.layers[s + 1].delta[v] + this.beta
+				this.layers[s + 1].biasp[v] = this.ni
+						* this.layers[s + 1].delta[v] + this.beta
 						* this.layers[s + 1].biasp[v];
 				this.layers[s + 1].bias[v] += this.layers[s + 1].biasp[v];
 
@@ -166,7 +172,7 @@ public class BackPropagation {
 
 			this.greske.add(new Point2D.Float(it, (float) error));
 
-			if (error < this.maxError) {
+			if (error < this.MAX_ERROR) {
 				break;
 			}
 
@@ -184,7 +190,7 @@ public class BackPropagation {
 
 			double error = this.training();
 
-			if (error < this.maxError) {
+			if (error < this.MAX_ERROR) {
 				break;
 			}
 
@@ -215,4 +221,9 @@ public class BackPropagation {
 		return new BackPropagationOutput(index, max);
 	}
 
+	public void setMaxError(double maxError) {
+		this.MAX_ERROR = maxError;
+	}
+	
+	
 }

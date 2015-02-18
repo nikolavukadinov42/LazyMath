@@ -67,10 +67,6 @@ public class OcrMath extends OcrTemplate {
 		nodes.addAll(RootUtil.getNthRootNodes(regions, nodes));
 		nodes.addAll(SimpleNodeUtil.getSimpleNodes(regions));
 
-		for (AbstractNode node : nodes) {
-			this.setNodeCharacter(node);
-		}
-
 		Collections.sort(nodes, new Comparator<AbstractNode>() {
 			@Override
 			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
@@ -78,16 +74,11 @@ public class OcrMath extends OcrTemplate {
 			}
 		});
 
+		for (AbstractNode node : nodes) {
+			this.setNodeCharacter(node);
+		}
+		
 		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
-
-//		Collections.sort(nodes, new Comparator<AbstractNode>() {
-//			@Override
-//			public int compare(AbstractNode firstNode, AbstractNode secondNode) {
-//				return (int) (firstNode.getMinX() - secondNode.getMinX());
-//			}
-//		});
-//
-//		SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
 		this.formula.addNodes(nodes);
 	}
@@ -168,7 +159,8 @@ public class OcrMath extends OcrTemplate {
 		for (RasterRegion regionFirst : regions) {
 			for (RasterRegion regionSecond : regions) {
 				if (regionFirst != regionSecond
-						&& !(toRemove.contains(regionFirst) || toRemove.contains(regionSecond))) {
+						&& !(toRemove.contains(regionFirst) || toRemove
+								.contains(regionSecond))) {
 					concatAboveBelow(regionFirst, regionSecond, toRemove);
 					concatEquals(regionFirst, regionSecond, toRemove);
 				}
@@ -178,8 +170,8 @@ public class OcrMath extends OcrTemplate {
 		regions.removeAll(toRemove);
 	}
 
-	private static void concatAboveBelow(RasterRegion regionFirst, RasterRegion regionSecond,
-			List<RasterRegion> toRemove) {
+	private static void concatAboveBelow(RasterRegion regionFirst,
+			RasterRegion regionSecond, List<RasterRegion> toRemove) {
 		double topDistance = regionFirst.minY - regionSecond.maxY;
 		double bottomDistance = regionSecond.minY - regionFirst.maxY;
 		double firstHeight = regionFirst.maxY - regionFirst.minY;
@@ -187,8 +179,9 @@ public class OcrMath extends OcrTemplate {
 		double secondHeight = regionSecond.maxY - regionSecond.minY;
 		double secondWidth = regionSecond.maxX - regionSecond.minX;
 
-		if (secondHeight < firstHeight * 0.2 && secondWidth < firstWidth * 1.2
-				&& Math.abs(regionFirst.xM - regionSecond.xM) < firstWidth * 1.5) {
+		if (secondHeight < firstHeight * 0.3
+				&& secondWidth < firstWidth * 1.2
+				&& Math.abs(regionFirst.xM - regionSecond.xM) < firstWidth * 1.3) {
 			if ((topDistance > 0 && topDistance < firstHeight * 0.5)
 					|| (bottomDistance > 0 && bottomDistance < firstHeight * 0.5)) {
 				regionFirst.points.addAll(regionSecond.points);
@@ -197,14 +190,8 @@ public class OcrMath extends OcrTemplate {
 		}
 	}
 
-	private static boolean isBetweenXRegion(RasterRegion regionFirst, RasterRegion regionSecond,
-			double tolerance) {
-		return regionSecond.minX > regionFirst.minX - tolerance
-				&& regionSecond.maxX < regionFirst.maxX + tolerance;
-	}
-
-	private static void concatEquals(RasterRegion regionFirst, RasterRegion regionSecond,
-			List<RasterRegion> toRemove) {
+	private static void concatEquals(RasterRegion regionFirst,
+			RasterRegion regionSecond, List<RasterRegion> toRemove) {
 		if (FractionUtil.isFractionLineOrMinus(regionFirst)
 				&& FractionUtil.isFractionLineOrMinus(regionSecond)) {
 			double firstWidth = regionFirst.maxX - regionFirst.minX;

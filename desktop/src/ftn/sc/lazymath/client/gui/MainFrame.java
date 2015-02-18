@@ -25,6 +25,7 @@ import ftn.sc.lazymath.ocr.OcrTemplate;
 import ftn.sc.lazymath.ocr.OcrUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.ImageUtil;
 import ftn.sc.lazymath.ocr.imageprocessing.RasterRegion;
+import ftn.sc.lazymath.ocr.neuralnetwork.BackPropagation;
 import ftn.sc.lazymath.ocr.neuralnetwork.NeuralNetwork;
 import ftn.sc.lazymath.util.ImageFilter;
 
@@ -79,8 +80,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	// private String imageFileName = "log.png";
 	// public static final String DEFAULT_INPUT = "logyxy-a+b*axy";
 
-	private String imageFileName = "complex1.png";
-	public static final String DEFAULT_INPUT = "x+y*k//xaa+*bb2+/x2cv+b*/kak/xyx++*y2y";
+	private String imageFileName = "comb.png";
 
 	// private String imageFileName = "sqrt.png";
 	// public static final String DEFAULT_INPUT = "1-/k/xxb+-yy";
@@ -172,7 +172,8 @@ public class MainFrame extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == this.buttonBlackAndWhite) {
 			int[][] image = OcrUtil
-					.convertImageToMatrix((BufferedImage) this.imagePanel.getImage());
+					.convertImageToMatrix((BufferedImage) this.imagePanel
+							.getImage());
 			BufferedImage processed = ImageUtil.matrixToBitmap(image);
 			this.imagePanel.setImage(processed);
 		} else if (e.getSource() == this.buttonLoadImage) {
@@ -189,8 +190,9 @@ public class MainFrame extends JFrame implements ActionListener {
 			}
 		} else if (e.getSource() == this.buttonFindRegions) {
 			if (this.ocrMath != null) {
-				int[][] image = ImageUtil.bitmapToMatrix(((BufferedImage) this.imagePanel
-						.getImage()));
+				int[][] image = ImageUtil
+						.bitmapToMatrix(((BufferedImage) this.imagePanel
+								.getImage()));
 
 				image = ImageUtil.matrixToBinary(image, 200);
 
@@ -206,8 +208,9 @@ public class MainFrame extends JFrame implements ActionListener {
 			this.ocrMath = new OcrMath(this.trainNeuralNetworks());
 		} else if (e.getSource() == this.buttonProcess) {
 			if (this.ocrMath != null) {
-				int[][] image = OcrUtil.convertImageToMatrix((BufferedImage) this.imagePanel
-						.getImage());
+				int[][] image = OcrUtil
+						.convertImageToMatrix((BufferedImage) this.imagePanel
+								.getImage());
 
 				BufferedImage bitmap = ImageUtil.matrixToBitmap(image);
 
@@ -230,21 +233,22 @@ public class MainFrame extends JFrame implements ActionListener {
 
 	private List<NeuralNetwork> trainNeuralNetworks() {
 		List<NeuralNetwork> neuralNetworks = new ArrayList<NeuralNetwork>();
-		String[] paths = new String[] { /* "./res/tsComputerModern.png", */"./res/tsLatinModern.png" };
+		String[] paths = new String[] { "./res/tsComputerModern.png",
+				"./res/tsLatinModern.png" };
 		String chars = "0123456789abcdefghijklmnopqrstuvwxyzαβγδθ+-*/=∫()[]{}±!'";
 
 		try {
 			for (String path : paths) {
 				BufferedImage img = ImageIO.read(new File(path));
 
-				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil.matrixToBinary(
-						ImageUtil.bitmapToMatrix(img), 254));
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil
+						.matrixToBinary(ImageUtil.bitmapToMatrix(img), 254));
 
 				this.imagePanel.setImage(bitmap);
 
 				List<RasterRegion> regions = OcrUtil.getRegions(img);
 
-				NeuralNetwork nn = new NeuralNetwork(regions, chars);
+				NeuralNetwork nn = new NeuralNetwork(regions, chars, 0);
 
 				neuralNetworks.add(nn);
 			}
@@ -252,21 +256,22 @@ public class MainFrame extends JFrame implements ActionListener {
 			e.printStackTrace();
 		}
 
-		paths = new String[] { /* "./res/tsComputerModern2.png", */"./res/tsLatinModern2.png" };
+		paths = new String[] { /*"./res/tsComputerModern2.png",*/
+				"./res/tsLatinModern2.png" };
 		chars = "arcosintegxplmud";
 
 		try {
 			for (String path : paths) {
 				BufferedImage img = ImageIO.read(new File(path));
 
-				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil.matrixToBinary(
-						ImageUtil.bitmapToMatrix(img), 254));
+				BufferedImage bitmap = ImageUtil.matrixToBitmap(ImageUtil
+						.matrixToBinary(ImageUtil.bitmapToMatrix(img), 254));
 
 				this.imagePanel.setImage(bitmap);
 
 				List<RasterRegion> regions = OcrUtil.getRegions(img);
 
-				NeuralNetwork nn = new NeuralNetwork(regions, chars);
+				NeuralNetwork nn = new NeuralNetwork(regions, chars, 0.05);
 
 				neuralNetworks.add(nn);
 			}
