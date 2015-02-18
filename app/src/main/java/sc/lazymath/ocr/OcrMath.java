@@ -56,8 +56,6 @@ public class OcrMath extends OcrTemplate {
     protected void processRegions(List<RasterRegion> regions) {
         this.formula = new Formula();
 
-        mergeRegions(regions);
-
         List<AbstractNode> nodes = new ArrayList<>();
         nodes.addAll(FractionUtil.getFractionNodes(regions));
         nodes.addAll(RootUtil.getNthRootNodes(regions, nodes));
@@ -70,6 +68,10 @@ public class OcrMath extends OcrTemplate {
             }
         });
 
+        for (AbstractNode node : nodes) {
+            this.setNodeCharacter(node);
+        }
+
         SimpleNodeUtil.getExponents(nodes, null, new ArrayList<AbstractNode>());
 
         this.formula.addNodes(nodes);
@@ -77,12 +79,11 @@ public class OcrMath extends OcrTemplate {
 
     @Override
     public String recognize() {
-        for (AbstractNode node : this.formula.getNodes()) {
-            this.setNodeCharacter(node);
-        }
+//        for (AbstractNode node : this.formula.getNodes()) {
+//            this.setNodeCharacter(node);
+//        }
 
-        return parseFormulaString(this.formula.toString());
-        // return this.formula.toString();
+        return /*parseFormulaString(*/this.formula.toString();
     }
 
     private String parseFormulaString(String input) {
@@ -124,12 +125,11 @@ public class OcrMath extends OcrTemplate {
 
         pattern = Pattern.compile("log\\(\\)");
         matcher = pattern.matcher(out);
-        if(matcher.find()) {
+        if (matcher.find()) {
             out = out.replaceAll("log\\(\\)", "log");
         } else {
             out = out.replaceAll("log\\(", "log_(");
         }
-
 
         return out;
     }
@@ -196,47 +196,107 @@ public class OcrMath extends OcrTemplate {
 
         for (RasterRegion regionFirst : regions) {
             for (RasterRegion regionSecond : regions) {
-                if (regionFirst != regionSecond && !(toRemove.contains(regionFirst) || toRemove.contains(regionSecond))) {
-                    concatAbove(regionFirst, regionSecond, toRemove);
+                if (regionFirst != regionSecond && !(toRemove.contains(regionFirst) || toRemove
+                        .contains(regionSecond))) {
+                    concatAboveBelow(regionFirst, regionSecond, toRemove);
                     concatEquals(regionFirst, regionSecond, toRemove);
                 }
             }
         }
+
         regions.removeAll(toRemove);
     }
 
-    private static void concatAbove(RasterRegion regionFirst, RasterRegion regionSecond, List<RasterRegion> toRemove) {
+    private static void concatAboveBelow(RasterRegion regionFirst, RasterRegion regionSecond,
+                                         List<RasterRegion> toRemove) {
         double topDistance = regionFirst.minY - regionSecond.maxY;
-        double smallerHeight = regionSecond.maxY - regionSecond.minY;
-        double biggerHeight = regionFirst.maxY - regionFirst.minY;
-        double biggerWidth = regionFirst.maxX - regionFirst.minX;
-        double smallerWidth = regionSecond.maxX - regionSecond.minX;
+        double bottomDistance = regionSecond.minY - regionFirst.maxY;
+        double firstHeight = regionFirst.maxY - regionFirst.minY;
+        double firstWidth = regionFirst.maxX - regionFirst.minX;
+        double secondHeight = regionSecond.maxY - regionSecond.minY;
+        double secondWidth = regionSecond.maxX - regionSecond.minX;
 
-        if (topDistance > 0 && topDistance < biggerHeight * 0.7 && smallerHeight < biggerHeight / 5 && smallerWidth < biggerWidth * 0.6
-                && isBetweenXRegion(regionFirst, regionSecond, biggerWidth * 0.7)) {
-            regionFirst.points.addAll(regionSecond.points);
-            toRemove.add(regionSecond);
+        if (secondHeight < firstHeight * 0.3 && secondWidth < firstWidth * 1.2 && Math.abs
+                (regionFirst.xM - regionSecond.xM) < firstWidth * 1.3) {
+            if ((topDistance > 0 && topDistance < firstHeight * 0.5) || (bottomDistance > 0 &&
+                    bottomDistance < firstHeight * 0.5)) {
+                regionFirst.points.addAll(regionSecond.points);
+                toRemove.add(regionSecond);
+            }
         }
     }
 
-    private static boolean isBetweenXRegion(RasterRegion regionFirst, RasterRegion regionSecond, double tolerance) {
-        return regionSecond.minX - tolerance >= (regionFirst.minX - tolerance) && regionSecond.maxX <= (regionFirst.maxX + tolerance);
-    }
+    private static void concatEquals(RasterRegion regionFirst, RasterRegion regionSecond,
+                                     List<RasterRegion> toRemove) {
+        if (FractionUtil.isFractionLineOrMinus(regionFirst) && FractionUtil.isFractionLineOrMinus
+                (regionSecond)) {
+            double firstWidth = regionFirst.maxX - regionFirst.minX;
+            double secondWidth = regionSecond.maxX - regionSecond.minX;
 
-    private static void concatEquals(RasterRegion regionFirst, RasterRegion regionSecond, List<RasterRegion> toRemove) {
-        if (regionFirst.points.size() == regionSecond.points.size() && regionFirst.minX == regionSecond.minX
-                && regionSecond.maxX == regionFirst.maxX) {
-            regionFirst.points.addAll(regionSecond.points);
-            toRemove.add(regionSecond);
+            if (Math.abs(firstWidth - secondWidth) < firstWidth * 0.2 && Math.abs(regionFirst.xM
+                    - regionSecond.xM) < firstWidth * 0.25 && Math.abs(regionFirst.yM -
+                    regionSecond.yM) < firstWidth * 0.33) {
+
+                regionFirst.points.addAll(regionSecond.points);
+                toRemove.add(regionSecond);
+            }
         }
     }
 
-    public String getInputString() {
-        return this.inputString;
+    public static boolean isIndex(RasterRegion left, RasterRegion right) {
+        boolean ret = false;
+
+        String leftChar = left.tag;
+        String rightChar = right.tag;
+
+        if (isHighChar(leftChar)) {
+            if (isLowChar(rightChar)) {
+                if (left.maxY - left.getHeight() / 3 < right.minY) {
+                    ret = true;
+                }
+            } else if (isHighChar(rightChar) || isNormalChar(rightChar)) {
+                if (left.maxY + left.getHeight() / 6 < right.maxY) {
+                    ret = true;
+                }
+            }
+        } else if (isLowChar(leftChar)) {
+            if (isHighChar(rightChar)) {
+                if (left.minY < right.minY) {
+                    ret = true;
+                }
+            } else if (isLowChar(rightChar) || isNormalChar(rightChar)) {
+                if (left.minY + left.getHeight() / 3 < right.minY) {
+                    ret = true;
+                }
+            }
+        } else {
+            if (isLowChar(rightChar)) {
+                if (left.minY + left.getHeight() / 3 < right.minY) {
+                    ret = true;
+                }
+            } else if (isHighChar(rightChar) || isNormalChar(rightChar)) {
+                if (left.maxY + left.getHeight() / 6 < right.maxY) {
+                    ret = true;
+                }
+            }
+        }
+
+        return ret;
     }
 
-    public void setInputString(String inputString) {
-        this.inputString = inputString;
+    public static boolean isHighChar(String c) {
+        return "bdhikltβδθ0123456789".contains(c);
     }
 
+    public static boolean isNormalChar(String c) {
+        return "acemnorsuvwxzα".contains(c);
+    }
+
+    public static boolean isLowChar(String c) {
+        return "gjpqyγ".contains(c);
+    }
+
+    public static boolean isIndexable(String c) {
+        return !"0123456789+-*/=∫()[]{}±!'".contains(c);
+    }
 }

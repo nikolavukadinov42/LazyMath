@@ -1,5 +1,7 @@
 package sc.lazymath.ocr.neuralnetwork;
 
+import android.util.Log;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -16,12 +18,15 @@ public class NeuralNetwork implements Serializable {
 	public Map<Integer, String> alphabetInverse = new HashMap<Integer, String>();
 
 	public NeuralNetwork(List<RasterRegion> regions, String input) {
-		this.tagRegions(regions, input);
-		this.createAlphabets(regions, input);
-		double[][][] trainingSet = this.createTrainingSet(regions, input);
-
+        Log.d("Camera", "tag");
+        this.tagRegions(regions, input);
+        Log.d("Camera", "alphabets");
+		this.createAlphabets(regions);Log.d("Camera", "training set");
+		double[][][] trainingSet = this.createTrainingSet(regions);
+        Log.d("Camera", "bp init");
 		this.backPropagation = new BackPropagation(regions.size(), this.alphabet.size(),
 				trainingSet);
+        Log.d("Camera", "bp train");
 		this.backPropagation.train();
 	}
 
@@ -52,20 +57,20 @@ public class NeuralNetwork implements Serializable {
 		}
 	}
 
-	private void createAlphabets(List<RasterRegion> regions, String input) {
+	private void createAlphabets(List<RasterRegion> regions) {
 		int count = 0;
 
 		for (RasterRegion rasterRegion : regions) {
 			if (!this.alphabet.containsKey(rasterRegion.tag)) {
-				this.alphabet.put((String) rasterRegion.tag, count);
-				this.alphabetInverse.put(count, (String) rasterRegion.tag);
+				this.alphabet.put(rasterRegion.tag, count);
+				this.alphabetInverse.put(count, rasterRegion.tag);
 
 				count++;
 			}
 		}
 	}
 
-	private double[][][] createTrainingSet(List<RasterRegion> regions, String input) {
+	private double[][][] createTrainingSet(List<RasterRegion> regions) {
 		int numberOfSamples = regions.size();
 		double[][][] trainingSet = new double[numberOfSamples][2][64];
 

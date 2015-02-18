@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,8 +34,8 @@ public class OcrUtil {
 
         Rect cropWindow = CameraUtil.getCropWindow(activity, bmp);
 
-        Bitmap croppedBmp = Bitmap.createBitmap(bmp, cropWindow.left, cropWindow.top, cropWindow.right - cropWindow.left,
-                cropWindow.bottom - cropWindow.top);
+        Bitmap croppedBmp = Bitmap.createBitmap(bmp, cropWindow.left, cropWindow.top,
+                cropWindow.right - cropWindow.left, cropWindow.bottom - cropWindow.top);
 
         // rotate ccw by 90degrees
         Matrix mtx = new Matrix();
@@ -52,28 +54,28 @@ public class OcrUtil {
     public static List<NeuralNetwork> trainNeuralNetworks(Activity activity) {
         List<NeuralNetwork> neuralNetworks = new ArrayList<NeuralNetwork>();
 
-//        String[] paths = new String[] { "./res/ts/tss.png" };
-//		String[] paths = new String[] { "./res/ts/ts-computer-modern.png", "./res/ts/ts-latin-modern.png", "./res/ts/ts-verdana.png" };
-        String chars = "1234567890-+/*=abcdesintanlogRxyijkIJcvu()fgD";
+        String chars = "0123456789abcdefghijklmnopqrstuvwxyzαβγδθ+-*/=∫()[]{}±!'";
 
-        String[] paths = new String[]{"./res/v.png", "./res/h.png", "./res/lm.png"};
-//        String chars = "0123456789abcdxyz+-/*±()";
-
-        Bitmap image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts1);
+        Bitmap image = BitmapFactory.decodeResource(activity.getResources(),
+                R.drawable.ts_computermodern);
         List<RasterRegion> regions = OcrUtil.getRegions(image);
         OcrMath.mergeRegions(regions);
-        NeuralNetwork nn1 = new NeuralNetwork(regions, chars);
-        neuralNetworks.add(nn1);
+        NeuralNetwork nn = new NeuralNetwork(regions, chars);
+        neuralNetworks.add(nn);
 
-        //        image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts2);
-        //        regions = OcrUtil.getRegions(image);
-        //        NeuralNetwork nn2 = new NeuralNetwork(regions, chars);
-        //        neuralNetworks.add(nn2);
-        //
-        //        image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts3);
-        //        regions = OcrUtil.getRegions(image);
-        //        NeuralNetwork nn3 = new NeuralNetwork(regions, chars);
-        //        neuralNetworks.add(nn3);
+        image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts_latinmodern);
+        regions = OcrUtil.getRegions(image);
+        OcrMath.mergeRegions(regions);
+        nn = new NeuralNetwork(regions, chars);
+        neuralNetworks.add(nn);
+
+        chars = "arcosintegxplmud";
+
+        image = BitmapFactory.decodeResource(activity.getResources(), R.drawable.ts_latinmodern2);
+        regions = OcrUtil.getRegions(image);
+        OcrMath.mergeRegions(regions);
+        nn = new NeuralNetwork(regions, chars);
+        neuralNetworks.add(nn);
 
         return neuralNetworks;
     }
@@ -104,7 +106,7 @@ public class OcrUtil {
         List<RasterRegion> regions = null;
 
         int[][] image = ImageUtil.bitmapToMatrix(bitmap);
-        image = ImageUtil.matrixToBinary(image, 200);
+        image = ImageUtil.matrixToBinary(image, 250);
 
         regions = ImageUtil.regionLabeling(image);
 
@@ -135,8 +137,8 @@ public class OcrUtil {
                 discarded.add(rasterRegion);
             }
 
-            if (rasterRegion.minX == 0 || rasterRegion.maxX == w - 1 || rasterRegion.minY == 0
-                    || rasterRegion.maxY == h - 1) {
+            if (rasterRegion.minX == 0 || rasterRegion.maxX == w - 1 || rasterRegion.minY == 0 ||
+                    rasterRegion.maxY == h - 1) {
                 discarded.add(rasterRegion);
             }
         }
@@ -148,10 +150,12 @@ public class OcrUtil {
         return regions;
     }
 
-    public static void serializeNeuralNetworks(Context context, List<NeuralNetwork> neuralNetworks) {
+    public static void serializeNeuralNetworks(List<NeuralNetwork> neuralNetworks) {
         try {
-            File dir = context.getDir("LazyMath", Context.MODE_PRIVATE);
+            File dir = Environment.getExternalStorageDirectory();
             File file = new File(dir, "neuralnetworks.lzm");
+
+            Log.d("dir", dir.getAbsolutePath());
 
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
@@ -164,11 +168,11 @@ public class OcrUtil {
         }
     }
 
-    public static List<NeuralNetwork> deserializeNeuralNetworks(Context context) {
+    public static List<NeuralNetwork> deserializeNeuralNetworks() {
         List<NeuralNetwork> neuralNetworks = null;
 
         try {
-            File dir = context.getDir("LazyMath", Context.MODE_PRIVATE);
+            File dir = Environment.getExternalStorageDirectory();
             File file = new File(dir, "neuralnetworks.lzm");
 
             FileInputStream fileInputStream = new FileInputStream(file);

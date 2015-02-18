@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import sc.lazymath.ocr.OcrMath;
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
 import sc.lazymath.ocr.math.AbstractNode;
 import sc.lazymath.ocr.math.root.RootUtil;
@@ -137,14 +138,14 @@ public class FractionUtil {
 
 		// check if eccentricity below tolerance
 		if (region.eccentricity < ecentricityTolerance) {
-			double theta = region.theta;
+			double theta = Math.abs(region.theta);
 
 			// check if horizontal
 			if (theta > Math.PI / 2) {
 				theta = Math.abs(theta - Math.PI);
 			}
 
-			ret = theta < Math.PI / 4;
+			ret = theta < Math.PI / 5;
 		}
 
 		return ret;

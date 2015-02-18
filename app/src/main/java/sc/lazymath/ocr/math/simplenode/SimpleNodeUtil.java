@@ -3,6 +3,7 @@ package sc.lazymath.ocr.math.simplenode;
 import java.util.ArrayList;
 import java.util.List;
 
+import sc.lazymath.ocr.OcrMath;
 import sc.lazymath.ocr.imageprocessing.RasterRegion;
 import sc.lazymath.ocr.math.AbstractNode;
 import sc.lazymath.ocr.math.fraction.FractionNode;
@@ -20,6 +21,8 @@ public class SimpleNodeUtil {
 	 */
 	public static List<AbstractNode> getSimpleNodes(List<RasterRegion> regions) {
 		List<AbstractNode> ret = new ArrayList<>();
+
+        OcrMath.mergeRegions(regions);
 
 		for (RasterRegion region : regions) {
 			SimpleNode simpleNode = new SimpleNode(region);

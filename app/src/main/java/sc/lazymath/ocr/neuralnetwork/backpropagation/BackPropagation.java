@@ -4,15 +4,17 @@
 
 package sc.lazymath.ocr.neuralnetwork.backpropagation;
 
+import android.util.Log;
+
 import java.io.Serializable;
 import java.util.Random;
 
 public class BackPropagation  implements Serializable {
-	public static int MAX_NUM = 64;
+	public static int MAX_NUM = 120;
 	private int layersNum = 3;
 	private int samplesNum = 4;
 	private int maxIterations = 100000;
-	private double maxError = 0.0005;
+	private double maxError = 0.00005;
 	private int attemptsNum = 100;
 
 	public NeuralNetworkLayer[] layers = new NeuralNetworkLayer[this.layersNum];
@@ -42,7 +44,7 @@ public class BackPropagation  implements Serializable {
 		this.ni = 0.05;
 		this.beta = 0.5;
 		this.layers[0].n = 64;
-		this.layers[1].n = 35;
+		this.layers[1].n = (int)((double)this.outputNum * 1.5);
 		this.layers[2].n = this.outputNum;
 	}
 
@@ -163,8 +165,10 @@ public class BackPropagation  implements Serializable {
 			if (error < this.maxError) {
 				break;
 			}
-
+            Log.d("bp it", it+"");
 		}
+
+        Log.d("bp err", error+"");
 
 		return error;
 	}
@@ -173,6 +177,7 @@ public class BackPropagation  implements Serializable {
 		for (int attempt = 0; attempt < this.attemptsNum; attempt++) {
 			this.weightsInitialize();
 
+            Log.d("bp att", attempt+"");
 			double error = this.training();
 
 			if (error < this.maxError) {

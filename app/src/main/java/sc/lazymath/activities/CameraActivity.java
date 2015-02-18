@@ -149,33 +149,24 @@ public class CameraActivity extends ActionBarActivity {
 
     private List<NeuralNetwork> getNeuralNetworks(){
         // try to open neural networks from disk
-        List<NeuralNetwork> neuralNetworks = OcrUtil.deserializeNeuralNetworks(this.getApplicationContext());
+        List<NeuralNetwork> neuralNetworks = OcrUtil.deserializeNeuralNetworks();
 
         // if there are no neural networks on disk create them and save them
         if(neuralNetworks == null){
             neuralNetworks = OcrUtil.trainNeuralNetworks(this);
-            OcrUtil.serializeNeuralNetworks(this.getApplicationContext(), neuralNetworks);
+            OcrUtil.serializeNeuralNetworks(neuralNetworks);
         }
 
         return neuralNetworks;
     }
 
     public void cameraCapture(View view){
-//        Rect rect = CameraUtil.transformToMeteringArea(CameraActivity.this);
-//        Log.d("Metering rect", rect.toString());
-//
-//        CameraUtil.setMeteringArea(camera, rect);
-        //                camera.autoFocus(autoFocusCallback);
-
-        camera.takePicture(null, null, pictureCallback);
-    }
-
-    public void cameraAutofocus(View view){
-        this.camera.autoFocus(null);
-    }
-
-    public void cameraFlash(View view){
-        CameraUtil.changeFlash(camera);
+        this.camera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                camera.takePicture(null, null, pictureCallback);
+            }
+        });
     }
 }
 
